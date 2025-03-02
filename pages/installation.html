@@ -15,28 +15,62 @@
     </nav>
 
     <div class="container mt-5">
-        <h2>Installation Guide</h2>
-        <p class="text-justify">
-            Follow these steps to set up the environment and run the Recursive Robotic Swarm simulation.
+        <h2 class="mb-4">Installation Guide</h2>
+        
+        <p>
+            Follow these steps to set up your environment and start creating or modifying the Recursive Robotic Swarm simulation.
         </p>
+        <hr>
+        <hr>
+        <ul class="list-group list-group-flush">
+            <li class="list-group-item">
+                <h4><span class="fw-bold">1. Install VS Code and Live Server Extension</span></h4>
+                <p>Download and install <a href="https://code.visualstudio.com/" target="_blank">Visual Studio Code</a>. Then, open VS Code and install the <strong>Live Server</strong> extension from the marketplace.</p>
+            </li>
+    
+            <li class="list-group-item">
+                <h4><span class="fw-bold">2. Open Your Project Folder</span></h4>
+                <p>Launch VS Code and open the folder containing your project files.</p>
+            </li>
+    
+            <li class="list-group-item">
+                <h4><span class="fw-bold">3. Locate and Open index.html</span></h4>
+                <p>In VS Code, find <code>index.html</code> in your project directory and open it.</p>
+            </li>
+    
+            <li class="list-group-item">
+                <h4><span class="fw-bold">4. Start Live Server</span></h4>
+                <p>Click the <strong>'Port: XXXX'</strong> button in the bottom-right corner of VS Code, then select <strong>'Go Live'</strong>.</p>
+            </li>
+        </ul>
+    
+        <p class="mt-4">
+            A new browser window should open, displaying the simulation. Any changes you make to the code will update automatically—no need to refresh manually!
+        </p>
+       
+        <hr>
+        <hr>
+        <section class="container mt-5">
+            <div class="row">
+                <div class="col-md-6 d-flex justify-content-center">
+                    <a href="structure.html" class="btn btn-outline-secondary mt-3">
+                        Understand the simulation's core structure and logic.
+                    </a>
+                </div>
+                <div class="col-md-6 d-flex justify-content-center">
+                    <a href="guide.html" class="btn btn-outline-secondary mt-3">
+                        Learn how to modify and create a simulation.
+                    </a>
+                </div>
+            </div>
+        </section>
 
-        <h4>1. Install Dependencies</h4>
-        <pre class="bg-dark text-white p-3"><code>
-npm install
-        </code></pre>
 
-        <h4>2. Run the Development Server</h4>
-        <pre class="bg-dark text-white p-3"><code>
-npm run dev
-        </code></pre>
-
-        <h4>3. Open the Simulation</h4>
-        <p>After running the server, open your browser and navigate to:</p>
-        <pre class="bg-dark text-white p-3"><code>
-http://localhost:3000
-        </code></pre>
-    </div>
-
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-</body>
-</html>
+        <footer class="container text-center py-4 mt-5 border-top">
+            <p>&copy; 2025 Recursive Robotic Swarms | Paul Richard</p>
+        </footer>
+    
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    </body>
+    </html>
+    

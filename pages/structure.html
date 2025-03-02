@@ -9,19 +9,32 @@
 
 <body>
 
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <nav class="navbar navbar-expand-lg navbar-light bg-light">
         <div class="container">
             <a class="navbar-brand" href="../index.html">Recursive Robotic Swarms</a>
         </div>
     </nav>
 
-    <div class="container mt-5">
-        <h2>Inverse kinematics of a Bill-E robot</h2>
+    <section class="container mt-5">
+        <h2>Inverse Kinematics of a Bill-E Robot</h2>
         <p class="text-justify">
-            This section explains how the simulation is structured, covering key components such as the inverse kinematic of a simple Bill-E robot all the way up to a multi-robot autonomous structure assembly.
+            This section explains how the simulation is structured, covering key components such as the inverse kinematics of a simple Bill-E robot, all the way up to a multi-robot autonomous structure assembly.
+            To fully understand the different parts of the simulation, we will progress from an empty Three.js scene to a fully autonomous simulation.
         </p>
+    
+        <h4 class="mt-4">Overview of Topics Covered:</h4>
+        <ul class="list-group list-group-flush">
+            <li class="list-group-item">📌 Code Structure</li>
+            <li class="list-group-item">📌 Three.js Basics</li>
+            <li class="list-group-item">📌 Voxelized Structure</li>
+            <li class="list-group-item">📌 Inverse Kinematics of a Bill-E Robot</li>
+            <li class="list-group-item">📌 Single Step of Bill-E</li>
+            <li class="list-group-item">📌 Basic Path-Planning</li>
+            <li class="list-group-item">📌 Simple Construction Algorithm</li>
+            <li class="list-group-item">📌 Multi-Robot Simulation</li>
+        </ul>
 
-        <h4>1. Setting Up the Scene</h4>
+        <h4>1. Code Structure </h4>
         <p>We initialize a Three.js scene with objects and lighting.</p>
         
         <h4>2. Adding Objects</h4>
@@ -32,7 +45,7 @@
 
         <h4>4. Rendering the Simulation</h4>
         <p>The rendering loop updates the scene continuously.</p>
-    </div>
+    </section>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
