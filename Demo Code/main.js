@@ -1,19 +1,21 @@
-// main.js (Simulation Entry Point)
 import { initScene, scene } from "./js/scene.js";
-import { setupGUI, updateGUI, controlEndEffector } from "./js/gui.js";
+import { setupGUI, updateGUI} from "./js/gui.js"; //, controlEndEffector 
 import { THREERobot } from "./js/robot.js";
 
+
+// First initialize the scene with the camera angle, the light, the background color and the grid
 initScene();
 
+// Then initialize our robot 
 var VisualRobot = new THREERobot(
-    [
-        [0, 0, 2],
+    [ // Geometry
+        [0, 0, 2],    
         [0, 0, 5],
         [0, 0, 5],
         [0, 0, 2],
         [0, 0, 0],
     ],
-    [
+    [ // Limits on joint angles
         [-190 / 180 * Math.PI, 190 / 180 * Math.PI],
         [-58 / 180 * Math.PI, 90 / 180 * Math.PI],
         [-135 / 180 * Math.PI, 40 / 180 * Math.PI],
@@ -23,28 +25,12 @@ var VisualRobot = new THREERobot(
     scene
 );
 
-VisualRobot.setAngle(1,-Math.PI/8);
+// Initial robot position
+VisualRobot.setAngle(1,15*Math.PI/8); 
 VisualRobot.setAngle(2,Math.PI/2);
 VisualRobot.setAngle(3,Math.PI/2);
 
+
+// Finally setup and update the GIU
 setupGUI(VisualRobot);
 updateGUI(VisualRobot);
-
-controlEndEffector(VisualRobot);
-
-
-// QUESTIONS 
-
-// There is 5 vertices and used to be 6 But on the robot only 4 are visible what is the fith one
-// Joints Limits are Randomly Set ? 
-
-// For extemple here why is there the 5th and 6th one \
-// Work without the last one
-// geo = [
-// 	[0, 0, guiControls.offset],
-// 	[0, 0, guiControls.leg1],
-// 	[0, 0, guiControls.leg2],
-// 	[0, 0, guiControls.offset],
-// 	[0, 0, 0],
-// 	[0, 0, 0],
-// ];
