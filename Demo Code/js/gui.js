@@ -47,6 +47,15 @@ export function updateGUI(robotInstance) {
     /*
     Updates GUI controls and ensures the target moves with the robot.
     */
+    
+    // 🔹 Step 1: Refresh GUI values based on the updated robot instance
+    guiControls.j1 = robotInstance.angles[0] * RAD_TO_DEG;
+    guiControls.j2 = robotInstance.angles[1] * RAD_TO_DEG;
+    guiControls.j3 = robotInstance.angles[2] * RAD_TO_DEG;
+    guiControls.j4 = robotInstance.angles[3] * RAD_TO_DEG;
+    guiControls.j5 = robotInstance.angles[4] * RAD_TO_DEG;
+
+    // 🔹 Step 2: Apply onChange listeners
     for (let i = 0; i < jointsParams.length; i++) {
         jointsParams[i].onChange(() => {
             if (robotInstance) {
@@ -61,6 +70,13 @@ export function updateGUI(robotInstance) {
     }
     end.onChange(() => {
         robotInstance.swapFixedLeg();
+        
+        // 🔹 Step 3: Refresh the GUI again after swapping the leg
+        guiControls.j1 = robotInstance.angles[0] * RAD_TO_DEG;
+        guiControls.j2 = robotInstance.angles[1] * RAD_TO_DEG;
+        guiControls.j3 = robotInstance.angles[2] * RAD_TO_DEG;
+        guiControls.j4 = robotInstance.angles[3] * RAD_TO_DEG;
+        guiControls.j5 = robotInstance.angles[4] * RAD_TO_DEG;
     });
 }
 
