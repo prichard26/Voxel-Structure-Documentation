@@ -1,6 +1,6 @@
 // ===================================== SCENE ======================================
 var container, scene, camera, renderer;
-export{ scene, camera, renderer};
+export{scene, camera, renderer};
 
 export function initScene() {
 	container = document.getElementById( 'webgl' );
@@ -9,7 +9,7 @@ export function initScene() {
 		antialias: true, // to get smoother output
 		preserveDrawingBuffer: false, // no screenshot -> faster?
 	  });
-	renderer.setClearColor(0x333333);
+	renderer.setClearColor(0x444444);
 
 	renderer.setSize(window.innerWidth, window.innerHeight)
 	container.appendChild( renderer.domElement );
@@ -42,8 +42,8 @@ export function initScene() {
 	
 	window.addEventListener('resize', onWindowResize, false);
 
-	var size = 50;
-	var step = 100;
+	var size = 15;
+	var step = 30;
 
 	var gridHelper = new THREE.GridHelper(size, step);
 	gridHelper.rotation.x = Math.PI / 2;

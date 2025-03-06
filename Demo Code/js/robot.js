@@ -5,20 +5,16 @@ export class THREERobot {
         this.joints = []; 
         this.robotBones = [];
     
-        this.leg1 = initialGeometry[1][2]; 
+        this.leg1 = initialGeometry[1][2];      
         this.leg2 = initialGeometry[2][2]; 
-        console.log(this.leg1);
-        console.log(this.leg2);
-
         this.offset = initialGeometry[4][2]; 
-        this.fixed_leg = 0; 
+        this.fixed_leg = 0;             // can either be 0 or 4 
 
-        this.origin = new THREE.Vector3();
+        this.origin = new THREE.Vector3(); // position in global coordinates
         this.target = new THREE.Vector3();
-        console.log('origin',this.origin);
-        console.log('target',this.target);
-        this.origin = origin.clone();
-        this.target = target.clone();   // Position of leg 2 
+
+        this.origin = origin.clone();   // Position of joint 1
+        this.target = target.clone();   // Position of joint 4 = end effector 
 
         this.colors = [0xaaaaba,0xbbbbbb,0xbcbcbc,0xcbcbcb,0xcccccc,0x000000];
     
@@ -38,9 +34,6 @@ export class THREERobot {
     }
     
     buildRobot(initialGeometry, limits) {
-        /*
-        Fully builds the robot structure inside this.robotGroup.
-        */
         let parentObject = this.robotGroup;
         let x = 0, y = 0, z = 0;
 
@@ -104,9 +97,6 @@ export class THREERobot {
     }
 
     updateGeometry(newGeo, limits) {
-        /*
-        Replace the old robot with a other one with new geometry  
-        */
         let currentAngles = [...this.angles];
 
         this.scene.remove(this.robotGroup);
@@ -122,22 +112,11 @@ export class THREERobot {
         for (let i = 0; i < currentAngles.length; i++) {
             this.setAngle(i, currentAngles[i]);
         }
+        this.joints[this.fixed_leg].children[0].material.color.set(0x0000ff);
+
     }
-
-    // setAngle(index, angle, updateNow=true) {
-    //     this.angles[index] = angle;
-    //     if(updateNow) this.updateAngles();
-    // }
-
-    // updateAngles() {
-    //     this.robotBones[0].rotation.z = this.angles[0]; 
-    //     this.robotBones[1].rotation.y = this.angles[1];
-    //     this.robotBones[2].rotation.y = this.angles[2];
-    //     this.robotBones[3].rotation.y = this.angles[3];
-    //     this.robotBones[4].rotation.z = this.angles[4]; 
-    //     console.log('angles target', this.computeEndEffectorPosition());
-    // }
-
+    
+    
     setAngles(angles1) {
 		this.angles = angles1;
 		this.robotBones[0].rotation.z = this.angles[0];
@@ -159,65 +138,21 @@ export class THREERobot {
     
 
     updateAnglesFromTarget() {
-    
-        // this.origin.copy(worldOrigin);  // correctly synchronize this.origin explicitly
-
-        console.log('originx',this.origin.x);
-        console.log('origin',this.origin.y);
-        console.log('originz',this.origin.z);
-        console.log('target',this.target.x);
-        console.log('target',this.target.y);
-        console.log('target',this.target.z);
-
         let origin1 = new THREE.Vector3(this.origin.x,this.origin.y,this.target.z);
 
         let angles = ik_2d(this.target.z - this.origin.z, origin1.distanceTo(this.target), this.leg1, this.leg2);
 
-        // let dx = this.target.x - this.origin.x;
-        // let dy = this.target.y - this.origin.y;
-        // let dz = this.target.z - this.origin.z;
-    
-        // let planarDistance = Math.sqrt(dx * dx + dy * dy);
-    
-        // // Explicit reach constraint to avoid impossible IK
-        // const maxReach = this.leg1 + this.leg2 - 0.01;
-        // let distance = Math.sqrt(planarDistance**2 + dz**2);
-
-        // if (distance > maxReach) {
-        //     const scale = maxReach / distance;
-        //     // dx *= scale;
-        //     // dy *= scale;
-        //     // dz *= scale;
-        //     // planarDistance *= scale;
-        // }
-    
-        // Explicitly correct IK calculation matching your old approach:
-    
-        // Explicitly set joint angles clearly
-        // this.setAngle(0, Math.atan2(this.target.y - this.origin.y, this.target.x - this.origin.x), false);
-        // this.setAngle(1, angles.theta1, false);
-        // this.setAngle(2, angles.theta2 - angles.theta1, false);
-        // this.setAngle(3, Math.PI - angles.theta2, false);
-
-    
-        // // Explicitly update angles ONLY ONCE
-        // this.updateAngles();
         this.setAngle(0, Math.atan2(this.target.y - this.origin.y, this.target.x - this.origin.x));
         this.setAngle(1, angles.theta1);
         this.setAngle(2, angles.theta2 - angles.theta1);
         this.setAngle(3, Math.PI - angles.theta2);
 
-
         // Explicitly update matrices BEFORE updating positions
         this.robotGroup.updateMatrixWorld(true);
     
-        // Now explicitly and accurately update robot origin and target
+        // update robot origin and target
         this.robotBones[0].getWorldPosition(this.origin);
         this.target.copy(this.computeEndEffectorPosition());
-        console.log('origin de merde', this.origin);
-        console.log('target de merde', this.target);
-
-
     }
 
     
@@ -232,15 +167,10 @@ export class THREERobot {
         this.robotGroup.position.add(shift);
         this.robotGroup.updateMatrixWorld(true);
     
-        // Explicitly update both vectors after position shift:
-        console.log('origin de merde', this.origin);
-        console.log('target de merde', this.target);
+        // Swap origin and target:
         [this.target, this.origin] = [this.origin, this.target];
-        console.log('origin de pas', this.origin);
-        console.log('target de pas', this.target);
-        // this.origin.copy(oldEndPosition);
-        // this.target.copy(oldBasePosition);
-    
+        
+        // Update fixed_leg and update color of fixed leg 
         this.joints[this.fixed_leg].children[0].material.color.set(0x000000);
         this.fixed_leg = this.fixed_leg === 0 ? 4 : 0;
         this.joints[0].children[0].material.color.set(0x0000ff);
@@ -257,8 +187,7 @@ export class THREERobot {
 
 function ik_2d(x, y, d1, d2) {
 	let dist = Math.sqrt(x ** 2 + y ** 2);
-	if (dist > d1 + d2) {
-        console.log("aaaaaaaa");
+	if (dist > d1 + d2) { // rest posittion
         return { theta1: 0, theta2: Math.PI };
     }
 	let theta1 = Math.atan2(y, x) - Math.acos((dist ** 2 + d1 ** 2 - d2 ** 2) / (2 * d1 * dist));

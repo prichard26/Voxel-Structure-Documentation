@@ -25,46 +25,35 @@ export function setupGUI(robotInstance) {
 
     var gui = new dat.GUI();
 
+    // ========== Robot Geometry Control ==========
     var geometryGui = gui.addFolder('Robot Geometry');
-    geometryParams.push(geometryGui.add(guiControls, 'leg1', 1.00, 10.0).step(0.1).listen());
-    geometryParams.push(geometryGui.add(guiControls, 'leg2', 1.00, 10.0).step(0.1).listen());
-    geometryParams.push(geometryGui.add(guiControls, 'offset', 1.00, 10.0).step(0.1).listen());
+    geometryParams.push(geometryGui.add(guiControls, 'leg1', 1.00, 10.0).step(0.1).listen().onChange(() => updateRobotGeometry(robotInstance)));
+    geometryParams.push(geometryGui.add(guiControls, 'leg2', 1.00, 10.0).step(0.1).listen().onChange(() => updateRobotGeometry(robotInstance)));
+    geometryParams.push(geometryGui.add(guiControls, 'offset', 1.00, 10.0).step(0.1).listen().onChange(() => updateRobotGeometry(robotInstance)));
 
-    var jointsGui = gui.addFolder('Robot Joints');
-    jointsParams.push(jointsGui.add(guiControls, 'j1', 0.00, 360.0).step(0.5).listen());
-    jointsParams.push(jointsGui.add(guiControls, 'j2', 0.00, 360.0).step(0.5).listen());
-    jointsParams.push(jointsGui.add(guiControls, 'j3', 0.00, 360.0).step(0.5).listen());
-    jointsParams.push(jointsGui.add(guiControls, 'j4', 0.00, 360.0).step(0.5).listen());
-    jointsParams.push(jointsGui.add(guiControls, 'j5', 0.00, 360.0).step(0.5).listen());
+    // ========== Robot Joint Control ==========
+    let jointsGui = gui.addFolder('Robot Angles');
+    jointsParams.push(jointsGui.add(guiControls, 'j1', -180, 180).step(1).listen().onChange(() => robotInstance.setAngle(0, guiControls.j1 * DEG_TO_RAD)));
+    jointsParams.push(jointsGui.add(guiControls, 'j2', -180, 180).step(1).listen().onChange(() => robotInstance.setAngle(1, guiControls.j2 * DEG_TO_RAD)));
+    jointsParams.push(jointsGui.add(guiControls, 'j3', -180, 180).step(1).listen().onChange(() => robotInstance.setAngle(2, guiControls.j3 * DEG_TO_RAD)));
+    jointsParams.push(jointsGui.add(guiControls, 'j4', -180, 180).step(1).listen().onChange(() => robotInstance.setAngle(3, guiControls.j4 * DEG_TO_RAD)));
+    jointsParams.push(jointsGui.add(guiControls, 'j5', -180, 180).step(1).listen().onChange(() => robotInstance.setAngle(4, guiControls.j5 * DEG_TO_RAD)));
 }
 
 export function updateGUI(robotInstance) {
     /*
     Updates GUI controls and ensures the target moves with the robot.
     */
-    
-    // Refresh GUI values based on the updated robot instance
     guiControls.j1 = robotInstance.angles[0] * RAD_TO_DEG;
     guiControls.j2 = robotInstance.angles[1] * RAD_TO_DEG;
     guiControls.j3 = robotInstance.angles[2] * RAD_TO_DEG;
     guiControls.j4 = robotInstance.angles[3] * RAD_TO_DEG;
     guiControls.j5 = robotInstance.angles[4] * RAD_TO_DEG;
 
-    // Update Gui when user interact with GUI
-    for (let i = 0; i < jointsParams.length; i++) {
-        jointsParams[i].onChange(() => {
-            if (robotInstance) {
-                robotInstance.setAngle(i, guiControls[`j${i+1}`] * DEG_TO_RAD);
-            }
-        });
-    }
-    for (let i = 0; i < geometryParams.length; i++) {
-        geometryParams[i].onChange(() => {
-            updateRobotGeometry(robotInstance);
-        });
-    }
+    guiControls.leg1 = robotInstance.leg1;
+    guiControls.leg2 = robotInstance.leg2;
+    guiControls.offset = robotInstance.offset;
 }
-
 
 // ============================= UPDATE ROBOT WITH GUI ==============================
 

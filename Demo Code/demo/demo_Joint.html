@@ -44,36 +44,26 @@
 		// First initialize the scene with the camera angle, the light, the background color and the grid
 		initScene();
 
-		// Then initialize our robot 
-		var VisualRobot = new THREERobot(
-			[ // Geometry
-				[0, 0, 2],    
-				[0, 0, 5],
-				[0, 0, 5],
-				[0, 0, 2],
-				[0, 0, 0],
+		// clearly set origin and target explicitly
+		const origin = new THREE.Vector3(0,0,0);
+		const target = new THREE.Vector3(3, -3, 3);  // clearly end position explicitly set 
+
+		let VisualRobot = new THREERobot(
+			[ [0,0,2], [0,0,5], [0,0,5], [0,0,2], [0,0,0] ],
+			[
+			[-2*Math.PI, 2*Math.PI],
+			[2*Math.PI, 2*Math.PI],
+			[2*Math.PI, 2*Math.PI],
+			[2*Math.PI, 2*Math.PI],
+			[2*Math.PI, 2*Math.PI]
 			],
-			[ // Limits on joint angles
-				[-190 / 180 * Math.PI, 190 / 180 * Math.PI],
-				[-58 / 180 * Math.PI, 90 / 180 * Math.PI],
-				[-135 / 180 * Math.PI, 40 / 180 * Math.PI],
-				[-90 / 180 * Math.PI, 75 / 180 * Math.PI],
-				[-139 / 180 * Math.PI, 20 / 180 * Math.PI],
-			],
+			origin,
+			target,
 			scene
 		);
-
-		// Initial robot position
-		VisualRobot.setAngle(1,15*Math.PI/8); 
-		VisualRobot.setAngle(2,Math.PI/2);
-		VisualRobot.setAngle(3,Math.PI/2);
-
-
 		// Finally setup and update the GIU
 		setupGUI(VisualRobot);
-		updateGUI(VisualRobot);
 	</script>
-
 
 </body>
 </html>

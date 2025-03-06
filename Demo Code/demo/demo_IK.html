@@ -37,7 +37,7 @@
 
 	<script type="module">
 		import { initScene, scene } from "../js/scene.js";
-		import { setupGUI} from "../js/GUI/gui_demo2.js"; //, controlEndEffector 
+		import { setupGUI} from "../js/GUI/gui_demo2.js"; 
 		import { THREERobot } from "../js/robot.js";
 
 
@@ -46,7 +46,7 @@
 
 		// clearly set origin and target explicitly
 		const origin = new THREE.Vector3(0,0,0);
-		const target = new THREE.Vector3(-1, 6, 4);  // clearly end position explicitly set 
+		const target = new THREE.Vector3(-4, 3, 4);  // clearly end position explicitly set 
 
 		let VisualRobot = new THREERobot(
 			[ [0,0,2], [0,0,5], [0,0,5], [0,0,2], [0,0,0] ],
@@ -63,9 +63,7 @@
 		);
 		// Finally setup and update the GIU
 		setupGUI(VisualRobot);
-		// updateGUI(VisualRobot);
 	</script>
-
 
 </body>
 </html>
