@@ -1,5 +1,4 @@
 export var guiControls;
-var DEG_TO_RAD = Math.PI / 180;
 var RAD_TO_DEG = 180 / Math.PI;
 
 export function setupGUI(robotInstance) {
@@ -30,21 +29,19 @@ export function setupGUI(robotInstance) {
 
     // Target controls explicitly:
     let targetGui = gui.addFolder('Target Control');
-    targetGui.add(guiControls, 'targetX', -5, 5).step(0.1).onChange(updateTarget);
-    targetGui.add(guiControls, 'targetY', -5, 5).step(0.1).onChange(updateTarget);
-    targetGui.add(guiControls, 'targetZ', -5, 5).step(0.1).onChange(updateTarget);
+    var targetXController = targetGui.add(guiControls, 'targetX', -5, 5).step(0.1).onChange(updateTarget);
+    var targetYController = targetGui.add(guiControls, 'targetY', -5, 5).step(0.1).onChange(updateTarget);
+    var targetZController = targetGui.add(guiControls, 'targetZ', -5, 5).step(0.1).onChange(updateTarget);
+
 
     targetGui.add(guiControls, 'Fixed_Leg', ["end 1", "end 2"]).onChange(() => {
         robotInstance.swapFixedLeg();
         updateGUI(robotInstance);
+    
+        targetXController.updateDisplay();
+        targetYController.updateDisplay();
+        targetZController.updateDisplay();
     });
-
-    // Update angles explicitly every frame for real-time consistency
-    function animateGUI(){
-        updateGUI(robotInstance);
-        requestAnimationFrame(animateGUI);
-    }
-    animateGUI(); // explicitly starts continuous GUI updating
 
     function updateTarget(){
         robotInstance.setToTarget(guiControls.targetX, guiControls.targetY, guiControls.targetZ);

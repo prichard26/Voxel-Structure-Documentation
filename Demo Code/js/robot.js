@@ -31,9 +31,9 @@ export class THREERobot {
         // Explicitly set initial target and compute IK
         this.updateAnglesFromTarget();
 
-        // this.target.copy(this.computeEndEffectorPosition());
+        this.target.copy(this.computeEndEffectorPosition());
 
-        // this.joints[this.fixed_leg].children[0].material.color.set(0x0000ff);
+        this.joints[this.fixed_leg].children[0].material.color.set(0x0000ff);
 
     }
     
@@ -233,8 +233,13 @@ export class THREERobot {
         this.robotGroup.updateMatrixWorld(true);
     
         // Explicitly update both vectors after position shift:
-        this.origin.copy(oldEndPosition);
-        this.target.copy(oldBasePosition);
+        console.log('origin de merde', this.origin);
+        console.log('target de merde', this.target);
+        [this.target, this.origin] = [this.origin, this.target];
+        console.log('origin de pas', this.origin);
+        console.log('target de pas', this.target);
+        // this.origin.copy(oldEndPosition);
+        // this.target.copy(oldBasePosition);
     
         this.joints[this.fixed_leg].children[0].material.color.set(0x000000);
         this.fixed_leg = this.fixed_leg === 0 ? 4 : 0;
