@@ -1,40 +1,40 @@
 export class THREERobot {
-    constructor(initialGeometry, limits, scene) {
-        /*
-        initialGeometry ==> Array defining the dimension of each robot link (width, height, depth)
-        limits    ==> Defines the min and max joint rotation of each segment
-        scene     ==> The scene to which the robot is added
-        */
-
+    constructor(initialGeometry, limits, origin, target, scene) {
         this.scene = scene;
-        this.angles = [0, 0, 0, 0, 0, 0];       // Store current rotation value in radians for each joint of the robot 
-        this.joints = [];                       // actual joint position / angles
-        this.robotBones = [];                   // Position and Mesh of the robot links
+        this.angles = [0, 0, 0, 0, 0]; 
+        this.joints = []; 
+        this.robotBones = [];
+    
+        this.leg1 = initialGeometry[1][2]; 
+        this.leg2 = initialGeometry[2][2]; 
+        console.log(this.leg1);
+        console.log(this.leg2);
 
-        this.leg1 = initialGeometry[2][2];      // Length of leg 1
-        this.leg2 = initialGeometry[3][2];      // Length of leg 2
-        this.offset = initialGeometry[4][2];    // Offset length
-        this.fixed_leg = 0;                     // Either 0 == Back leg or 4 == Front leg
+        this.offset = initialGeometry[4][2]; 
+        this.fixed_leg = 0; 
 
-        this.initialGeometry = initialGeometry.map(row => [...row]);
-        this.initialLimits = limits.map(row => [...row]);
+        this.origin = new THREE.Vector3();
+        this.target = new THREE.Vector3();
+        console.log('origin',this.origin);
+        console.log('target',this.target);
+        this.origin = origin.clone();
+        this.target = target.clone();   // Position of leg 2 
 
-        this.colors = [
-            0xaaaaba, // Light gray
-            0xbbbbbb, // Slightly darker gray
-            0xbcbcbc, // Medium gray
-            0xcbcbcb, // Lighter gray
-            0xcccccc, // Almost white
-            0x000000, // Black
-        ];
-
-        // Create robot group
+        this.colors = [0xaaaaba,0xbbbbbb,0xbcbcbc,0xcbcbcb,0xcccccc,0x000000];
+    
         this.robotGroup = new THREE.Group();
+        this.robotGroup.position.copy(origin); 
+
         this.buildRobot(initialGeometry, limits);
         this.scene.add(this.robotGroup);
 
-        // For visualization purposes we init the fixed leg blue:
-        this.joints[this.fixed_leg].children[0].material.color.set(0x0000ff);
+        // Explicitly set initial target and compute IK
+        this.updateAnglesFromTarget();
+
+        // this.target.copy(this.computeEndEffectorPosition());
+
+        // this.joints[this.fixed_leg].children[0].material.color.set(0x0000ff);
+
     }
     
     buildRobot(initialGeometry, limits) {
@@ -46,10 +46,12 @@ export class THREERobot {
 
         for (let i = 0; i < initialGeometry.length; i++) {
             let link = initialGeometry[i];
+            let jointLimits = limits[i];
+        
             let linkGeo = this.createJointBone(
                 x, y, z,
                 link[0], link[1], link[2],
-                limits[i][0], limits[i][1], i
+                jointLimits[0], jointLimits[1], i
             );
             
             x = link[0];
@@ -97,14 +99,9 @@ export class THREERobot {
         if (jointNumber === 0 || jointNumber === 4) { 
             joint.rotation.x = Math.PI / 2;
         }
-
         group.add(joint);
-    
         return group;
     }
-
-
-    // ===================== MODIFY CURRENT ROBOT GEOMETRY OR ANGLES =====================
 
     updateGeometry(newGeo, limits) {
         /*
@@ -127,201 +124,139 @@ export class THREERobot {
         }
     }
 
+    // setAngle(index, angle, updateNow=true) {
+    //     this.angles[index] = angle;
+    //     if(updateNow) this.updateAngles();
+    // }
+
+    // updateAngles() {
+    //     this.robotBones[0].rotation.z = this.angles[0]; 
+    //     this.robotBones[1].rotation.y = this.angles[1];
+    //     this.robotBones[2].rotation.y = this.angles[2];
+    //     this.robotBones[3].rotation.y = this.angles[3];
+    //     this.robotBones[4].rotation.z = this.angles[4]; 
+    //     console.log('angles target', this.computeEndEffectorPosition());
+    // }
+
+    setAngles(angles1) {
+		this.angles = angles1;
+		this.robotBones[0].rotation.z = this.angles[0];
+		this.robotBones[1].rotation.y = this.angles[1];
+		this.robotBones[2].rotation.y = this.angles[2];
+		this.robotBones[3].rotation.y = this.angles[3];
+		this.robotBones[4].rotation.z = this.angles[4];
+    }
+	
     setAngle(index, angle) {
-        /*
-        Updates the rotations of one specified robot joint.
-        */
         this.angles[index] = angle;
         this.setAngles(this.angles);
     }
     
-    setAngles(newAngles) {
-        /*
-        Applies a full set of angles to the robot.
-        */
-        if (!newAngles) {
-            newAngles = this.angles; // Use stored angles if none are provided
-        } else {
-            this.angles = [...newAngles]; // Store the new angles properly
-        }
+    setToTarget(x, y, z){
+        this.target.set(x, y, z);
+        this.updateAnglesFromTarget();
+    }
     
-        // Apply angles to the correct rotation axes
-        this.robotBones[0].rotation.z = this.angles[0]; 
-        this.robotBones[1].rotation.y = this.angles[1];
-        this.robotBones[2].rotation.y = this.angles[2];
-        this.robotBones[3].rotation.y = this.angles[3];
-        this.robotBones[4].rotation.z = this.angles[4]; 
+
+    updateAnglesFromTarget() {
+    
+        // this.origin.copy(worldOrigin);  // correctly synchronize this.origin explicitly
+
+        console.log('originx',this.origin.x);
+        console.log('origin',this.origin.y);
+        console.log('originz',this.origin.z);
+        console.log('target',this.target.x);
+        console.log('target',this.target.y);
+        console.log('target',this.target.z);
+
+        let origin1 = new THREE.Vector3(this.origin.x,this.origin.y,this.target.z);
+
+        let angles = ik_2d(this.target.z - this.origin.z, origin1.distanceTo(this.target), this.leg1, this.leg2);
+
+        // let dx = this.target.x - this.origin.x;
+        // let dy = this.target.y - this.origin.y;
+        // let dz = this.target.z - this.origin.z;
+    
+        // let planarDistance = Math.sqrt(dx * dx + dy * dy);
+    
+        // // Explicit reach constraint to avoid impossible IK
+        // const maxReach = this.leg1 + this.leg2 - 0.01;
+        // let distance = Math.sqrt(planarDistance**2 + dz**2);
+
+        // if (distance > maxReach) {
+        //     const scale = maxReach / distance;
+        //     // dx *= scale;
+        //     // dy *= scale;
+        //     // dz *= scale;
+        //     // planarDistance *= scale;
+        // }
+    
+        // Explicitly correct IK calculation matching your old approach:
+    
+        // Explicitly set joint angles clearly
+        // this.setAngle(0, Math.atan2(this.target.y - this.origin.y, this.target.x - this.origin.x), false);
+        // this.setAngle(1, angles.theta1, false);
+        // this.setAngle(2, angles.theta2 - angles.theta1, false);
+        // this.setAngle(3, Math.PI - angles.theta2, false);
+
+    
+        // // Explicitly update angles ONLY ONCE
+        // this.updateAngles();
+        this.setAngle(0, Math.atan2(this.target.y - this.origin.y, this.target.x - this.origin.x));
+        this.setAngle(1, angles.theta1);
+        this.setAngle(2, angles.theta2 - angles.theta1);
+        this.setAngle(3, Math.PI - angles.theta2);
+
+
+        // Explicitly update matrices BEFORE updating positions
+        this.robotGroup.updateMatrixWorld(true);
+    
+        // Now explicitly and accurately update robot origin and target
+        this.robotBones[0].getWorldPosition(this.origin);
+        this.target.copy(this.computeEndEffectorPosition());
+        console.log('origin de merde', this.origin);
+        console.log('target de merde', this.target);
+
+
     }
 
-    // =============== CALCULATED NEEDED ANGLES FOR A TARGET POSITION =====================
-
+    
     swapFixedLeg() {
-        /*
-        Swap the fixed leg while preserving world positions, rotations, and joint angles.
-        */
-        this.joints[0].children[0].material.color.set(0x000000);
+        let oldBasePosition = new THREE.Vector3();
+        let oldEndPosition = new THREE.Vector3();
     
-        let previousAngles = [
-            this.angles[0],
-            this.angles[3],
-            this.angles[2],
-            this.angles[1],
-            0
-            // ((-this.angles[0] + (2 * Math.PI)) + (2 * Math.PI)) % (2 * Math.PI),  // Joint 3 → Joint 1
-            // ((-this.angles[3] % (2 * Math.PI)) + (2 * Math.PI)) % (2 * Math.PI),  // Joint 3 → Joint 1
-            // ((-this.angles[2] % (2 * Math.PI)) + (2 * Math.PI)) % (2 * Math.PI),  // Joint 2 remains the same
-            // ((-this.angles[1] % (2 * Math.PI)) + (2 * Math.PI)) % (2 * Math.PI),  // Joint 1 → Joint 3
-            // 0  // Joint 0 → Joint 4 (reset to 0)
-        ];
-
+        this.robotBones[0].getWorldPosition(oldBasePosition);
+        this.robotBones[this.robotBones.length - 1].getWorldPosition(oldEndPosition);
+    
+        const shift = new THREE.Vector3().subVectors(oldEndPosition, oldBasePosition);
+        this.robotGroup.position.add(shift);
+        this.robotGroup.updateMatrixWorld(true);
+    
+        // Explicitly update both vectors after position shift:
+        this.origin.copy(oldEndPosition);
+        this.target.copy(oldBasePosition);
+    
+        this.joints[this.fixed_leg].children[0].material.color.set(0x000000);
         this.fixed_leg = this.fixed_leg === 0 ? 4 : 0;
-        let fixedLegIndex = this.fixed_leg;
-        
-        this.buildRobotWithFixedLeg(this.initialGeometry, this.initialLimits, fixedLegIndex, previousAngles);
-        this.fixed_leg = 0;
         this.joints[0].children[0].material.color.set(0x0000ff);
+    
+        this.updateAnglesFromTarget();
     }
-    
-    buildRobotWithFixedLeg(initialGeometry, limits, fixedLegIndex, initialAngles) {
-        /*
-        Reconstructs the robot with a new fixed leg, preserving world position & orientation.
-        */
-    
-        // Step 1: Get the world position & quaternion of the new fixed leg
-        let fixedLeg = this.robotBones.find(bone => bone === this.robotBones[fixedLegIndex]);
-        let worldPosition = new THREE.Vector3();
-        let worldQuaternion = new THREE.Quaternion();
 
-        fixedLeg.getWorldPosition(worldPosition);
-        fixedLeg.getWorldQuaternion(worldQuaternion);
-
-        // Step 2: Reverse the quaternion's vector part (to flip the orientation)
-        let reversedQuaternion = new THREE.Quaternion(worldQuaternion.w, -worldQuaternion.x, -worldQuaternion.y, -worldQuaternion.z);
-
-        // Step 3: Reset the scene (clear the old robot)
-        while (this.robotGroup.children.length > 0) {
-            this.robotGroup.remove(this.robotGroup.children[0]);
-        }
-
-        this.robotBones = [];
-        this.joints = [];
-
-        // Step 4: Rebuild the robot at the fixed leg’s world position
-        this.robotGroup.position.copy(worldPosition);
-        this.robotGroup.quaternion.copy(reversedQuaternion);
-
-        let parentObject = this.robotGroup;
-        let x = 0, y = 0, z = 0;
-    
-        for (let i = 0; i < initialGeometry.length; i++) {
-            let link = initialGeometry[i];
-            let linkGeo = this.createJointBone(
-                x, y, z,
-                link[0], link[1], link[2],
-                limits[i][0], limits[i][1], i
-            );
-    
-            x = link[0];
-            y = link[1];
-            z = link[2];
-    
-            parentObject.add(linkGeo);
-            parentObject = linkGeo;
-            this.robotBones.push(linkGeo);
-        }
-
-        // Step 5: Set the final joint angles for the entire robot
-        this.setAngles(initialAngles);
+    computeEndEffectorPosition() {
+        const lastBone = this.robotBones[this.robotBones.length - 1];
+        lastBone.updateMatrixWorld(true);
+        return lastBone.getWorldPosition(new THREE.Vector3());
     }
-}   
+}
 
-// ==================================== GEOMETRY ====================================
-// ============ Implemented based on https://github.com/glumb/robot-gui =============
-// ==================================================================================
-
-
-    // swapFixedLeg() {
-    //     // Remove the old fixed leg color
-    //     this.joints[0].children[0].material.color.set(0x000000);
-    
-    //     // Toggle fixed leg (0 ↔ 4)
-    //     let old_fixed_leg = this.fixed_leg;
-    //     this.fixed_leg = this.fixed_leg === 0 ? 4 : 0;
-
-    //     // Rotate the first bone to align correctly in world space
-    //     let correctionQuaternionY = new THREE.Quaternion();
-    //     correctionQuaternionY.setFromAxisAngle(new THREE.Vector3(0, 1, 0), Math.PI); // Adjust for correct axis
-
-    //     let correctionQuaternionZ = new THREE.Quaternion();
-    //     correctionQuaternionZ.setFromAxisAngle(new THREE.Vector3(0, 0, 1), Math.PI); // Adjust for correct axis
-
-
-    //     let firstBone = this.robotBones[this.fixed_leg];
-    //     firstBone.quaternion.premultiply(correctionQuaternionY);
-    //     firstBone.updateMatrixWorld(true); // Ensure transform is updated   
-    //     let fixedPosition = this.robotBones[4].getWorldPosition(new THREE.Vector3());
-    //     let fixedQuaternion = this.robotBones[4].getWorldQuaternion(new THREE.Quaternion());
-    
-
-    //     // this.robotBones[3].quaternion.premultiply(correctionQuaternionZ);
-    //     // this.robotBones[3].updateMatrixWorld(true); // Ensure transform is updated   
-    //     // let fixedPosition1 = this.robotBones[3].getWorldPosition(new THREE.Vector3());
-    //     // let fixedQuaternion1 = this.robotBones[3].getWorldQuaternion(new THREE.Quaternion());
-
-    //     // this.robotBones[2].quaternion.premultiply(correctionQuaternionZ);
-    //     // this.robotBones[2].updateMatrixWorld(true); // Ensure transform is updated
-    //     // let fixedPosition2 = this.robotBones[2].getWorldPosition(new THREE.Vector3());
-    //     // let fixedQuaternion2 = this.robotBones[2].getWorldQuaternion(new THREE.Quaternion());
-
-
-    //     // this.robotBones[1].quaternion.premultiply(correctionQuaternionZ);
-    //     // this.robotBones[1].updateMatrixWorld(true); // Ensure transform is updated
-    //     // let fixedPosition3 = this.robotBones[1].getWorldPosition(new THREE.Vector3());
-    //     // let fixedQuaternion3 = this.robotBones[1].getWorldQuaternion(new THREE.Quaternion());
-
-
-    //     // let lastBone = this.robotBones[old_fixed_leg];
-    //     // lastBone.quaternion.premultiply(correctionQuaternionY);
-    //     // lastBone.updateMatrixWorld(true); // Ensure transform is updated   
-    //     // let fixedPosition4 = this.robotBones[0].getWorldPosition(new THREE.Vector3());
-    //     // let fixedQuaternion4 = this.robotBones[0].getWorldQuaternion(new THREE.Quaternion() );
-    
-    //     // // // Step 2: Reset hierarchy
-    //     // // while (this.robotGroup.children.length > 0) {
-    //     // //     this.robotGroup.remove(this.robotGroup.children[0]);
-    //     // // }
-
-    
-    //     // Step 3: Rebuild the hierarchy with proper linking
-    //     this.robotBones[4].position.copy(fixedPosition4);
-    //     this.robotBones[4].quaternion.copy(fixedQuaternion4);
-    //     parentObject.add(this.robotBones[4]);         
-    //     let parentObject = this.robotBones[4];
-
-    //     this.robotBones[3].position.copy(fixedPosition3);
-    //     this.robotBones[3].quaternion.copy(fixedQuaternion3);
-    //     parentObject.add(this.robotBones[3]);   
-    //     parentObject = this.robotBones[3];
-
-    //     this.robotBones[2].position.copy(fixedPosition2);
-    //     this.robotBones[2].quaternion.copy(fixedQuaternion2);
-    //     parentObject.add(this.robotBones[2]);    
-    //     parentObject = this.robotBones[2];
-
-    //     this.robotBones[1].position.copy(fixedPosition1);
-    //     this.robotBones[1].quaternion.copy(fixedQuaternion1);
-    //     parentObject.add(this.robotBones[1]);    
-    //     parentObject = this.robotBones[1];
-    
-    //     this.robotBones[0].position.copy(fixedPosition);
-    //     this.robotBones[0].quaternion.copy(fixedQuaternion);
-    //     this.robotGroup.add(this.robotBones[0]);    
-    //     parentObject = this.robotBones[0];
-    
-    
-    //     // Step 4: Apply correct angles
-    //     this.setAngles();
-    //     // Step 5: Set the new fixed leg color
-    //     this.joints[0].children[0].material.color.set(0x0000ff);
-    // }
-
+function ik_2d(x, y, d1, d2) {
+	let dist = Math.sqrt(x ** 2 + y ** 2);
+	if (dist > d1 + d2) {
+        console.log("aaaaaaaa");
+        return { theta1: 0, theta2: Math.PI };
+    }
+	let theta1 = Math.atan2(y, x) - Math.acos((dist ** 2 + d1 ** 2 - d2 ** 2) / (2 * d1 * dist));
+	let theta2 = Math.atan2(y - d1 * Math.sin(theta1), x - d1 * Math.cos(theta1));
+	return {theta1, theta2};
+}

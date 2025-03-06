@@ -21,8 +21,6 @@ export function setupGUI(robotInstance) {
         this.leg1 = robotInstance.robotBones[2].position.z; 
         this.leg2 = robotInstance.robotBones[3].position.z;
         this.offset = robotInstance.robotBones[4].position.z; 
-
-        this.Fixed_Leg = "end 1";
     };
 
     var gui = new dat.GUI();
@@ -38,9 +36,6 @@ export function setupGUI(robotInstance) {
     jointsParams.push(jointsGui.add(guiControls, 'j3', 0.00, 360.0).step(0.5).listen());
     jointsParams.push(jointsGui.add(guiControls, 'j4', 0.00, 360.0).step(0.5).listen());
     jointsParams.push(jointsGui.add(guiControls, 'j5', 0.00, 360.0).step(0.5).listen());
-
-    var endtarget = gui.addFolder('Target End');
-    end = endtarget.add(guiControls, 'Fixed_Leg', ["end 1", "end 2"]);
 }
 
 export function updateGUI(robotInstance) {
@@ -48,14 +43,14 @@ export function updateGUI(robotInstance) {
     Updates GUI controls and ensures the target moves with the robot.
     */
     
-    // 🔹 Step 1: Refresh GUI values based on the updated robot instance
+    // Refresh GUI values based on the updated robot instance
     guiControls.j1 = robotInstance.angles[0] * RAD_TO_DEG;
     guiControls.j2 = robotInstance.angles[1] * RAD_TO_DEG;
     guiControls.j3 = robotInstance.angles[2] * RAD_TO_DEG;
     guiControls.j4 = robotInstance.angles[3] * RAD_TO_DEG;
     guiControls.j5 = robotInstance.angles[4] * RAD_TO_DEG;
 
-    // 🔹 Step 2: Apply onChange listeners
+    // Update Gui when user interact with GUI
     for (let i = 0; i < jointsParams.length; i++) {
         jointsParams[i].onChange(() => {
             if (robotInstance) {
@@ -68,16 +63,6 @@ export function updateGUI(robotInstance) {
             updateRobotGeometry(robotInstance);
         });
     }
-    end.onChange(() => {
-        robotInstance.swapFixedLeg();
-        
-        // 🔹 Step 3: Refresh the GUI again after swapping the leg
-        guiControls.j1 = robotInstance.angles[0] * RAD_TO_DEG;
-        guiControls.j2 = robotInstance.angles[1] * RAD_TO_DEG;
-        guiControls.j3 = robotInstance.angles[2] * RAD_TO_DEG;
-        guiControls.j4 = robotInstance.angles[3] * RAD_TO_DEG;
-        guiControls.j5 = robotInstance.angles[4] * RAD_TO_DEG;
-    });
 }
 
 
