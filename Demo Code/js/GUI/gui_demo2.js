@@ -50,11 +50,11 @@ export function setupGUI(robotInstance) {
 }
 
 export function updateGUI(robotInstance) {
-    guiControls.j1 = robotInstance.angles[0] * RAD_TO_DEG;
-    guiControls.j2 = robotInstance.angles[1] * RAD_TO_DEG;
-    guiControls.j3 = robotInstance.angles[2] * RAD_TO_DEG;
-    guiControls.j4 = robotInstance.angles[3] * RAD_TO_DEG;
-    guiControls.j5 = robotInstance.angles[4] * RAD_TO_DEG;
+    guiControls.j1 = ((robotInstance.angles[0] + Math.PI) % (2 * Math.PI) - Math.PI) * RAD_TO_DEG;
+    guiControls.j2 = ((robotInstance.angles[1] + Math.PI) % (2 * Math.PI) - Math.PI) * RAD_TO_DEG;
+    guiControls.j3 = ((robotInstance.angles[2] + Math.PI) % (2 * Math.PI) - Math.PI) * RAD_TO_DEG;
+    guiControls.j4 = ((robotInstance.angles[3] + Math.PI) % (2 * Math.PI) - Math.PI) * RAD_TO_DEG;
+    guiControls.j5 = ((robotInstance.angles[4] + Math.PI) % (2 * Math.PI) - Math.PI) * RAD_TO_DEG;
 
     guiControls.targetX = robotInstance.target.x;
     guiControls.targetY = robotInstance.target.y;
