@@ -1,3 +1,6 @@
+import { goForward, goBackward, turnRight, turnLeft, moveRobot, rotateMovingLeg, calculateMovementVector, calculateRotationVector, displayTrajectory, clearTrajectory } from "./robot_movement.js";
+
+
 export class THREERobot {
     constructor(initialGeometry, limits, origin, target, scene) {
         this.scene = scene;
@@ -15,6 +18,8 @@ export class THREERobot {
 
         this.origin = origin.clone();   // Position of joint 1
         this.target = target.clone();   // Position of joint 4 = end effector 
+
+        this.trajectoryPoints = [];     // For visualization of the movment trajectories
 
         this.colors = [0xaaaaba,0xbbbbbb,0xbcbcbc,0xcbcbcb,0xcccccc,0x000000];
     
@@ -113,9 +118,7 @@ export class THREERobot {
             this.setAngle(i, currentAngles[i]);
         }
         this.joints[this.fixed_leg].children[0].material.color.set(0x0000ff);
-
     }
-    
     
     setAngles(angles1) {
 		this.angles = angles1;
@@ -135,7 +138,6 @@ export class THREERobot {
         this.target.set(x, y, z);
         this.updateAnglesFromTarget();
     }
-    
 
     updateAnglesFromTarget() {
         let origin1 = new THREE.Vector3(this.origin.x,this.origin.y,this.target.z);
@@ -184,6 +186,18 @@ export class THREERobot {
         return lastBone.getWorldPosition(new THREE.Vector3());
     }
 }
+
+// ✅ Attach movement functions dynamically
+THREERobot.prototype.goForward = goForward;
+THREERobot.prototype.goBackward = goBackward;
+THREERobot.prototype.turnRight = turnRight;
+THREERobot.prototype.turnLeft = turnLeft;
+THREERobot.prototype.moveRobot = moveRobot;
+THREERobot.prototype.calculateMovementVector = calculateMovementVector;
+THREERobot.prototype.calculateRotationVector = calculateRotationVector;
+THREERobot.prototype.displayTrajectory = displayTrajectory;
+THREERobot.prototype.clearTrajectory = clearTrajectory;
+THREERobot.prototype.rotateMovingLeg = rotateMovingLeg;
 
 function ik_2d(x, y, d1, d2) {
 	let dist = Math.sqrt(x ** 2 + y ** 2);

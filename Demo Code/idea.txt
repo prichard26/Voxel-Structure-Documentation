@@ -1,0 +1,31 @@
+TO DO : 
+    - Look exactly the implementation of amira amnd see what we can keep and change 
+
+    
+    - Implement the Different movements
+        - Go forward
+        - Go Backward
+        - Turn Right 
+        - Turn Left 
+
+        - Climb stair
+        - Trasition ground to wall 
+        - Trasition wall to ceiling  
+        - Trasition wall to ground   
+
+        - Go forward crowling 
+        - Go forward from above 
+
+        Compare with same joitn speed for the different go forward
+
+
+
+IDEA :
+
+
+We could add an orientation in the robot to be able know what go forward turn right or left mean 
+
+
+
+
+

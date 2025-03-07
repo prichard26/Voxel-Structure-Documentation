@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Three.js</title>
+</head>
+<body>
+	<style>
+		html, body {
+			margin: 0;
+			padding: 0;
+			overflow: hidden;
+		}
+	</style>
+
+	<div id="webgl"></div>
+
+	<div id="title" style="
+	position: absolute;
+	top: 10px;
+	left: 10px;
+	font-size: 20px;
+	font-weight: bold;
+	color: white;
+	font-family: Arial, sans-serif;
+	background: rgba(0, 0, 0, 0.5);
+	padding: 5px 10px;
+	border-radius: 5px;
+	">Demo 3: Basic Movements</div>
+
+
+	<script src="../lib/three.js"></script>
+	<script src="../lib/OrbitControls.js"></script>
+	<script src="../lib/OBJLoader.js"></script>
+	<script src="../lib/dat.gui.min.js"></script>
+	<script src="../lib/GPUComputationRenderer.js"></script>
+
+
+	<script type="module">
+		import { initScene, scene } from "../js/scene.js";
+		import { setupGUI} from "../js/GUI/gui_demo3.js"; 
+		import { THREERobot } from "../js/robot.js";
+
+
+		// First initialize the scene with the camera angle, the light, the background color and the grid
+		initScene();
+
+		// clearly set origin and target explicitly
+		const origin = new THREE.Vector3(0,0,0);
+		const target = new THREE.Vector3(3, 0, 0);  // clearly end position explicitly set 
+
+		let VisualRobot = new THREERobot(
+			[ [0,0,2], [0,0,5], [0,0,5], [0,0,2], [0,0,0] ],
+			[
+			[-2*Math.PI, 2*Math.PI],
+			[2*Math.PI, 2*Math.PI],
+			[2*Math.PI, 2*Math.PI],
+			[2*Math.PI, 2*Math.PI],
+			[2*Math.PI, 2*Math.PI]
+			],
+			origin,
+			target,
+			scene
+		);
+		// Finally setup and update the GIU
+		setupGUI(VisualRobot);
+	</script>
+
+</body>
+</html>
+
