@@ -9,11 +9,20 @@ export function setupGUI(robotInstance) {
 
     // ========== MOVEMENT CONTROLS ==========
     let mvtListGui = gui.addFolder('Movement List');
-    mvtListGui.add({ moveForward: () => robotInstance.goForward() }, 'moveForward');
-    mvtListGui.add({ moveBackward: () => robotInstance.goBackward() }, 'moveBackward');
-    mvtListGui.add({ turnRight: () => robotInstance.turnRight() }, 'turnRight');
-    mvtListGui.add({ turnLeft: () => robotInstance.turnLeft() }, 'turnLeft');
 
+    mvtListGui.add({ moveForward: () => robotInstance.enqueueAction("goForward") }, 'moveForward');
+    mvtListGui.add({ moveBackward: () => robotInstance.enqueueAction("goBackward") }, 'moveBackward');
+    mvtListGui.add({ turnRight: () => robotInstance.enqueueAction("turnRight") }, 'turnRight');
+    mvtListGui.add({ turnLeft: () => robotInstance.enqueueAction("turnLeft") }, 'turnLeft');
+    mvtListGui.add({ planTransitionConvex: () => robotInstance.enqueueAction("planTransitionConvex") }, 'planTransitionConvex');
+    mvtListGui.add({ planTransitionConcave: () => robotInstance.enqueueAction("planTransitionConcave") }, 'planTransitionConcave');
+
+    let actionSequence = {
+        executeSequence: function () {
+            let sequence = ["goForward", "turnRight", "goForward", "goBackward"];
+            sequence.forEach(action => robotInstance.enqueueAction(action));
+        }
+    };
     // ========== TRAJECTORY CONTROLS ==========
     let trajectoryGui = gui.addFolder('Movement Trajectory');
     

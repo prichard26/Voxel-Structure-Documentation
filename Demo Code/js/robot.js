@@ -1,4 +1,4 @@
-import { goForward, goBackward, turnRight, turnLeft, moveRobot, rotateMovingLeg, calculateMovementVector, calculateRotationVector, displayTrajectory, clearTrajectory } from "./robot_movement.js";
+import { goForward, goBackward, turnRight, turnLeft, planTransitionConcave, planTransitionConvex, moveRobot, rotateMovingLeg, calculateMovementVector, calculateRotationVector, displayTrajectory, clearTrajectory,computeLocalUp, planTransition } from "./robot_movement.js";
 
 
 export class THREERobot {
@@ -13,13 +13,22 @@ export class THREERobot {
         this.offset = initialGeometry[4][2]; 
         this.fixed_leg = 0;             // can either be 0 or 4 
 
-        this.origin = new THREE.Vector3(); // position in global coordinates
-        this.target = new THREE.Vector3();
+        this.origin = new THREE.Vector3(
+            Math.round(origin.x), 
+            Math.round(origin.y), 
+            Math.round(origin.z)
+        );
 
-        this.origin = origin.clone();   // Position of joint 1
-        this.target = target.clone();   // Position of joint 4 = end effector 
+        this.target = new THREE.Vector3(
+            Math.round(target.x), 
+            Math.round(target.y), 
+            Math.round(target.z)
+        );
 
         this.trajectoryPoints = [];     // For visualization of the movment trajectories
+
+        this.actionQueue = [];          //  Action queue to store movement actions
+        this.isExecuting = false;       //  Track if an action is being executed
 
         this.colors = [0xaaaaba,0xbbbbbb,0xbcbcbc,0xcbcbcb,0xcccccc,0x000000];
     
@@ -134,8 +143,12 @@ export class THREERobot {
         this.setAngles(this.angles);
     }
     
-    setToTarget(x, y, z){
-        this.target.set(x, y, z);
+    setToTarget(x, y, z, shouldRound = true) {
+        if (shouldRound) {
+            this.target.set(Math.round(x), Math.round(y), Math.round(z));
+        } else {
+            this.target.set(x, y, z);
+        }
         this.updateAnglesFromTarget();
     }
 
@@ -170,8 +183,18 @@ export class THREERobot {
         this.robotGroup.updateMatrixWorld(true);
     
         // Swap origin and target:
-        [this.target, this.origin] = [this.origin, this.target];
-        
+        this.origin.copy(oldEndPosition).set(
+            Math.round(oldEndPosition.x),
+            Math.round(oldEndPosition.y),
+            Math.round(oldEndPosition.z)
+        );
+
+        this.target.copy(oldBasePosition).set(
+            Math.round(oldBasePosition.x),
+            Math.round(oldBasePosition.y),
+            Math.round(oldBasePosition.z)
+        );
+
         // Update fixed_leg and update color of fixed leg 
         this.joints[this.fixed_leg].children[0].material.color.set(0x000000);
         this.fixed_leg = this.fixed_leg === 0 ? 4 : 0;
@@ -185,6 +208,42 @@ export class THREERobot {
         lastBone.updateMatrixWorld(true);
         return lastBone.getWorldPosition(new THREE.Vector3());
     }
+
+    enqueueAction(action) {
+        this.actionQueue.push(action);
+        if (!this.isExecuting) {
+            this.processNextAction();
+        }
+    }
+
+    async processNextAction() {
+        if (this.actionQueue.length === 0) {
+            this.isExecuting = false;
+            return;
+        }
+        this.isExecuting = true;
+        
+        let action = this.actionQueue.shift();
+        console.log(`Executing: ${action}`);
+
+        await this.executeAction(action);
+        
+        this.processNextAction();
+    }
+
+    async executeAction(action) {
+        return new Promise((resolve) => {
+            console.log(`Executing: ${action}`);
+    
+            if (action === "goForward") this.goForward(resolve);
+            else if (action === "goBackward") this.goBackward(resolve);
+            else if (action === "turnRight") this.turnRight(resolve);
+            else if (action === "turnLeft") this.turnLeft(resolve);
+            else if (action === "planTransitionConcave") this.planTransitionConcave(resolve);
+            else if (action === "planTransitionConvex") this.planTransitionConvex(resolve);
+            else resolve(); 
+        });
+    }
 }
 
 // ✅ Attach movement functions dynamically
@@ -192,12 +251,17 @@ THREERobot.prototype.goForward = goForward;
 THREERobot.prototype.goBackward = goBackward;
 THREERobot.prototype.turnRight = turnRight;
 THREERobot.prototype.turnLeft = turnLeft;
+THREERobot.prototype.planTransitionConcave = planTransitionConcave;
+THREERobot.prototype.planTransitionConvex = planTransitionConvex;
+THREERobot.prototype.planTransition = planTransition;
 THREERobot.prototype.moveRobot = moveRobot;
 THREERobot.prototype.calculateMovementVector = calculateMovementVector;
 THREERobot.prototype.calculateRotationVector = calculateRotationVector;
 THREERobot.prototype.displayTrajectory = displayTrajectory;
 THREERobot.prototype.clearTrajectory = clearTrajectory;
 THREERobot.prototype.rotateMovingLeg = rotateMovingLeg;
+THREERobot.prototype.computeLocalUp = computeLocalUp;
+
 
 function ik_2d(x, y, d1, d2) {
 	let dist = Math.sqrt(x ** 2 + y ** 2);
