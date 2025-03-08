@@ -46,7 +46,8 @@
 
 		// clearly set origin and target explicitly
 		const origin = new THREE.Vector3(0,0,0);
-		const target = new THREE.Vector3(3, 0, 0);  // clearly end position explicitly set 
+		const target = new THREE.Vector3(2, 2, 0);  // clearly end position explicitly set 
+		const normal = new THREE.Vector3(0, 1, 0);
 
 		let VisualRobot = new THREERobot(
 			[ [0,0,2], [0,0,5], [0,0,5], [0,0,2], [0,0,0] ],
@@ -59,6 +60,7 @@
 			],
 			origin,
 			target,
+			normal,
 			scene
 		);
 		// Finally setup and update the GIU

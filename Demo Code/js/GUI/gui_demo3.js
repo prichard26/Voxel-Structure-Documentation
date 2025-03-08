@@ -17,12 +17,6 @@ export function setupGUI(robotInstance) {
     mvtListGui.add({ planTransitionConvex: () => robotInstance.enqueueAction("planTransitionConvex") }, 'planTransitionConvex');
     mvtListGui.add({ planTransitionConcave: () => robotInstance.enqueueAction("planTransitionConcave") }, 'planTransitionConcave');
 
-    let actionSequence = {
-        executeSequence: function () {
-            let sequence = ["goForward", "turnRight", "goForward", "goBackward"];
-            sequence.forEach(action => robotInstance.enqueueAction(action));
-        }
-    };
     // ========== TRAJECTORY CONTROLS ==========
     let trajectoryGui = gui.addFolder('Movement Trajectory');
     
