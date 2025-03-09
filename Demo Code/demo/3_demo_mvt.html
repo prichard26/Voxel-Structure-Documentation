@@ -45,9 +45,9 @@
 		initScene();
 
 		// clearly set origin and target explicitly
-		const origin = new THREE.Vector3(0,0,0);
-		const target = new THREE.Vector3(2, 2, 0);  // clearly end position explicitly set 
-		const normal = new THREE.Vector3(0, 1, 0);
+		const originPos = new THREE.Vector3(0,0,0);
+		const targetPos = new THREE.Vector3(1,1, 5);  // clearly end position explicitly set 
+		const normal = new THREE.Vector3(0, 0, -1);
 
 		let VisualRobot = new THREERobot(
 			[ [0,0,2], [0,0,5], [0,0,5], [0,0,2], [0,0,0] ],
@@ -58,8 +58,8 @@
 			[2*Math.PI, 2*Math.PI],
 			[2*Math.PI, 2*Math.PI]
 			],
-			origin,
-			target,
+			originPos,
+			targetPos,
 			normal,
 			scene
 		);
