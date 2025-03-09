@@ -4,37 +4,39 @@ const DELAY = 10;
 
 export function goForward(resolve) {
     console.log("Moving forward...");
-    let movementVector = this.calculateMovementVector();
-    this.moveRobot(movementVector, resolve);
+    let movementVector = new THREE.Vector3().subVectors(this.target.position, this.origin.position).normalize();
+    let newNormal = this.target.normal.clone();
+    console.log('movment : ', movementVector, ' , normal : ',newNormal);
+    this.moveRobot(movementVector, newNormal, resolve);
 }
 
 export function goBackward(resolve) {
     console.log("Moving backward...");
-
     this.swapFixedLeg();        // Swap before moving
 
     let movementVector = this.calculateMovementVector();
-    this.moveRobot(movementVector, () => {
-        this.swapFixedLeg();    // Swap again to restore original stepping
-        resolve();              //  Notify queue that action is complete
+    let newNormal = this.target.normal.clone(); 
+    this.moveRobot(movementVector, newNormal, () => {
+        this.swapFixedLeg();  
+        resolve();  
     });
 }
 
 export function turnRight(resolve) {
     console.log("Turning right...");
-    let rotationAxis = this.origin.normal;
+    let rotationAxis = this.origin.normal.clone();
     this.rotateMovingLeg(rotationAxis, -Math.PI / 2, resolve);
 }
 
 export function turnLeft(resolve) {
     console.log("Turning left...");
-    let rotationAxis = this.origin.normal;
+    let rotationAxis = this.origin.normal.clone();
     this.rotateMovingLeg(rotationAxis, Math.PI / 2, resolve);
 }
 
 export function halfturn(resolve) {
     console.log("Turning Half...");
-    let rotationAxis = this.origin.normal;
+    let rotationAxis = this.origin.normal.clone();
 
     this.rotateMovingLeg(rotationAxis, Math.PI, resolve);
 }
@@ -43,6 +45,7 @@ export function planTransitionConvex(resolve){
     console.log("Plan Transition Convex...");
     this.planTransition('Convex', resolve)
 }
+
 export function planTransitionConcave(resolve) {
     console.log("Performing Concave Transition...");
 
@@ -59,35 +62,19 @@ export function planTransitionConcave(resolve) {
         return;
     }
 
-    console.log('Before Rotation - origin:', this.origin);
-    console.log('Before Rotation - target:', this.target);
-
-    // ✅ Step 1: Rotate the **moving leg** onto the **new perpendicular surface**
+    // Step 1: Rotate moving leg onto the new perpendicular surface
     this.rotateMovingLeg(rotationAxis, Math.PI / 2, () => {
-        console.log('After Rotation - origin:', this.origin);
-        console.log('After Rotation - target:', this.target);
-
-        // ✅ Explicitly update target position after rotation
-        this.target.position.copy(this.computeEndEffectorPosition());
-
-        // ✅ Step 2: Move the **moving leg** to the **correct position** (2 steps along new surface)
+        // Step 2: Move moving leg 2 steps along the new surface
         let transitionVector = targetNormal.clone().multiplyScalar(STEP_SIZE * 2);
-        this.moveRobot(transitionVector, () => {
-
-            // ✅ Step 3: Swap legs (new leg is now fixed)
+        this.moveRobot(transitionVector, targetNormal, () => {
+            // Step 3: Swap legs (new leg is now fixed)
             this.swapFixedLeg();
-            console.log('After Swap - origin:', this.origin);
-            console.log('After Swap - target:', this.target);
 
-            // ✅ Step 4: Move new **moving leg** **1 step along the new surface**
+            // Step 4: Move new moving leg 1 step along new surface
             let followUpVector = movementVector.clone().multiplyScalar(STEP_SIZE);
-            this.moveRobot(followUpVector, () => {
-
-                // ✅ Step 5: Swap legs again (restore original stepping)
+            this.moveRobot(followUpVector, targetNormal, () => {
+                // Step 5: Swap legs again (restore original stepping)
                 this.swapFixedLeg();
-
-                console.log('Final - origin:', this.origin);
-                console.log('Final - target:', this.target);
                 console.log("✅ Concave transition complete.");
                 resolve();
             });
@@ -114,15 +101,14 @@ export function planTransitionConcave(resolve) {
 // origin 101 -100
 // target  102 -100 
 
-export function moveRobot(movementVector, resolve = () => {}) {  // ✅ Ensure resolve is always defined
+export function moveRobot(movementVector, newNormal, resolve = () => {}) {  // Ensure resolve is always defined
     if (this.legMoved === undefined) this.legMoved = false;
 
     let startMovingLeg = this.target.position.clone();
     let endMovingLeg = startMovingLeg.clone().add(movementVector.clone().multiplyScalar(STEP_SIZE));
 
-    let localUp = this.target.normal.clone();
-    let control1Moving = startMovingLeg.clone().lerp(endMovingLeg, 0.33).add(localUp.clone().multiplyScalar(STEP_SIZE / 2));
-    let control2Moving = startMovingLeg.clone().lerp(endMovingLeg, 0.66).add(localUp.clone().multiplyScalar(STEP_SIZE / 2));
+    let control1Moving = startMovingLeg.clone().lerp(endMovingLeg, 0.33).add(newNormal.clone().multiplyScalar(STEP_SIZE / 2));
+    let control2Moving = startMovingLeg.clone().lerp(endMovingLeg, 0.66).add(newNormal.clone().multiplyScalar(STEP_SIZE / 2));
 
     let stepIndex = 0;
 
@@ -130,28 +116,27 @@ export function moveRobot(movementVector, resolve = () => {}) {  // ✅ Ensure r
         if (stepIndex <= INTERMEDIARY_STEPS) {
             let t = stepIndex / INTERMEDIARY_STEPS;
             let interpolatedMovingLeg = cubicBezier(startMovingLeg, control1Moving, control2Moving, endMovingLeg, t);
-
-            this.setToTarget(interpolatedMovingLeg.x, interpolatedMovingLeg.y, interpolatedMovingLeg.z, false);
+            this.setToTarget(interpolatedMovingLeg.x, interpolatedMovingLeg.y, interpolatedMovingLeg.z, newNormal.x, newNormal.y, newNormal.z, false);
             this.displayTrajectory();
 
             stepIndex++;
             setTimeout(step, DELAY);
         } else {
-            this.setToTarget(endMovingLeg.x, endMovingLeg.y, endMovingLeg.z, true);
-
+            this.setToTarget(endMovingLeg.x, endMovingLeg.y, endMovingLeg.z, newNormal.x, newNormal.y, newNormal.z, true);
             this.swapFixedLeg();
             if (!this.legMoved) {
                 this.legMoved = true;
-                this.moveRobot(movementVector, resolve);
+                this.moveRobot(movementVector, newNormal, resolve);
             } else {
                 this.legMoved = false;
-                if (resolve) resolve();  // ✅ Ensure resolve is called safely
+                if (resolve) resolve(); 
             }
         }
     };
-
     step();
 }
+
+
 export function rotateMovingLeg(rotationAxis, angleOffset, resolve = () => {}) {  
     let startMovingLeg = this.target.position.clone();
     let fixedLeg = this.origin.position.clone();
@@ -223,7 +208,7 @@ export function planTransition(type, resolve) {
 }
 
 export function calculateMovementVector() {
-    let movementVector = new THREE.Vector3().subVectors(this.target.position, this.origin.position);
+    let movementVector = new THREE.Vector3().subVectors(this.target.position, this.origin.position).normalize();
     movementVector.normalize();
     return movementVector;
 }

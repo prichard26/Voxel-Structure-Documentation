@@ -7,7 +7,6 @@ export class THREERobot {
         this.angles = [0, 0, 0, 0, 0]; 
         this.joints = []; 
         this.robotBones = [];
-
         this.leg1 = initialGeometry[1][2];      
         this.leg2 = initialGeometry[2][2]; 
         this.offset = initialGeometry[4][2]; 
@@ -22,9 +21,12 @@ export class THREERobot {
             position: target.clone(), 
             normal: normal.clone().normalize() 
         };
-        console.log('taget1', this.target.position.y)
-        console.log(this.target.position)
-        console.log(this.target)
+
+        this.direction = new THREE.Vector3().subVectors(this.target.position, this.origin.position);
+        // console.log(this.direction)
+        // console.log('taget1', this.target.position.y)
+        // console.log(this.target.position)
+        // console.log(this.target)
         this.trajectoryPoints = [];     // For visualization of the movment trajectories
 
         this.actionQueue = [];          //  Action queue to store movement actions
@@ -158,29 +160,46 @@ export class THREERobot {
         this.setAngles(this.angles);
     }
     
-    setToTarget(x, y, z, shouldRound = true) {
+    setToTarget(px, py, pz, nx,ny,nz, shouldRound = true) {
         if (shouldRound) {
-            this.target.position.set(Math.round(x), Math.round(y), Math.round(z));
+            this.target.position.set(Math.round(px), Math.round(py), Math.round(pz));
         } else {
-            this.target.position.set(x, y, z);
+            this.target.position.set(px, py, pz);
         }
+        this.target.normal.set(nx,ny,nz);
         this.updateAnglesFromTarget();
     }
 
     
     updateAnglesFromTarget() {
         // Compute movement direction
-        console.trace("🔍 Checking updateAnglesFromTarget - Before:", this.target.position.clone());
-
         let currentEndEffector = this.robotBones[4].getWorldPosition();
 
-        let direction = currentEndEffector.clone().sub(this.origin.position).normalize();
+        this.direction = currentEndEffector.clone().sub(this.origin.position).normalize();
 
         // Ensure direction is valid
-        let normal = this.origin.normal;
-        if (Math.abs(direction.dot(normal) - 1) < 1e-6) {  
-            if(this.target.normal.z <= 0){direction.set(-1,0,0)}
-            else{direction.set(1, 0, 0);} // Assign a default direction}
+        let normal = this.origin.normal.clone().normalize();
+
+        // Ensure `this.direction` is always valid
+        if (Math.abs(this.direction.dot(normal) - 1) < 1e-6) {  
+            if (normal.x > 0.9) {  
+                this.direction.set(0, 0, -1);
+            }
+            else if (normal.x < -0.9) {  
+                this.direction.set(0, 0, 1);
+            }
+            else if (normal.y > 0.9) {  
+                this.direction.set(1, 0, 0);
+            }
+            else if (normal.y < -0.9) {  
+                this.direction.set(1, 0, 0);
+            }
+            else if (normal.z > 0.9) {  
+                this.direction.set(1, 0, 0);
+            }
+            else if (normal.z < -0.9) {  
+                this.direction.set(-1, 0, 0);
+            }
         }
 
         // Project target onto movement plane
@@ -193,8 +212,8 @@ export class THREERobot {
         let direction_new = projectedTarget.clone().sub(this.origin.position).normalize();
 
         //Compute rotation angle θ0
-        let dotProduct = direction.dot(direction_new);
-        let crossProduct = new THREE.Vector3().crossVectors(direction, direction_new).dot(normal);
+        let dotProduct = this.direction.dot(direction_new);
+        let crossProduct = new THREE.Vector3().crossVectors(this.direction, direction_new).dot(normal);
         let theta0 = Math.atan2(crossProduct, dotProduct);
 
         this.setAngle(0, theta0);
@@ -208,7 +227,7 @@ export class THREERobot {
             this.target.position.clone().sub(this.origin.position.clone()).dot(bAxis)
         );
         let angles = this.ik3R(targetPoint.y, targetPoint.x, this.offset, this.leg1, this.leg2, this.offset, Math.PI);
-        console.log("Theta1:", angles.theta1, "Theta2:", angles.theta2, "Theta3:", angles.theta3);
+        // console.log("Theta1:", angles.theta1, "Theta2:", angles.theta2, "Theta3:", angles.theta3);
 
         // Apply IK Angles
         this.setAngle(1, angles.theta1);
@@ -217,10 +236,10 @@ export class THREERobot {
 
         // Update World Matrix
         this.robotGroup.updateMatrixWorld(true);
-        console.log("Projected Target:", projectedTarget);
-        console.log("Target in Local A-B Plane:", targetPoint);
-        console.log("IK Angles:", angles);
-        console.log("Final End-Effector Position:", this.robotBones[4].getWorldPosition());   
+        // console.log("Projected Target:", projectedTarget);
+        // console.log("Target in Local A-B Plane:", targetPoint);
+        // console.log("IK Angles:", angles);
+        // console.log("Final End-Effector Position:", this.robotBones[4].getWorldPosition());   
     }
 
     ik3R(x, y, L0, L1, L2, L3, psi) {
@@ -264,20 +283,12 @@ export class THREERobot {
             // ✅ Swap origin and target and ensure rounding
         let temp = { ...this.origin };
         this.origin = {
-            position: new THREE.Vector3(
-                Math.round(this.target.position.x),
-                Math.round(this.target.position.y),
-                Math.round(this.target.position.z)
-            ),
+            position: this.target.position.clone().round(),
             normal: this.target.normal.clone()
         };
-
+    
         this.target = {
-            position: new THREE.Vector3(
-                Math.round(temp.position.x),
-                Math.round(temp.position.y),
-                Math.round(temp.position.z)
-            ),
+            position: temp.position.clone().round(),
             normal: temp.normal.clone()
         };
     
@@ -288,19 +299,6 @@ export class THREERobot {
     
         this.updateAnglesFromTarget();
     }
-
-    
-
-    // ik_2d(x, y, d1, d2) {
-    //     let dist = Math.sqrt(x ** 2 + y ** 2)
-    //     if (dist > d1 + d2) {
-    //         console.log("⚠️ Target is unreachable! Reducing to max reach.");
-    //     }
-    //     let theta1 = Math.atan2(y, x) - Math.acos((dist ** 2 + d1 ** 2 - d2 ** 2) / (2 * d1 * dist));
-    //     let theta2 = Math.atan2(y - d1 * Math.sin(theta1), x - d1 * Math.cos(theta1));
-
-    //     return {theta1, theta2};
-    // }
 
     computeEndEffectorPosition() {
         const lastBone = this.robotBones[this.robotBones.length - 1];
@@ -359,59 +357,7 @@ THREERobot.prototype.calculateRotationVector = calculateRotationVector;
 THREERobot.prototype.displayTrajectory = displayTrajectory;
 THREERobot.prototype.clearTrajectory = clearTrajectory;
 THREERobot.prototype.rotateMovingLeg = rotateMovingLeg;
-
-// function ik_2d(x, y, d1, d2) {
-// 	let dist = Math.sqrt(x ** 2 + y ** 2);
-// 	if (dist > d1 + d2) { // rest posittion
-//         return { theta1: 0, theta2: Math.PI };
-//     }
-// 	let theta1 = Math.atan2(y, x) - Math.acos((dist ** 2 + d1 ** 2 - d2 ** 2) / (2 * d1 * dist));
-// 	let theta2 = Math.atan2(y - d1 * Math.sin(theta1), x - d1 * Math.cos(theta1));
-// 	return {theta1, theta2};
-// }
-
-// function ik_3d(targetPos, originPos, d1, d2, normal, newNormal) {
-//     // ✅ Compute movement direction (along which the leg moves)
-//     let movementVector = targetPos.clone().sub(originPos).normalize();
-
-//     // ✅ Compute the corrected movement plane perpendicular to newNormal
-//     let perpendicular = new THREE.Vector3().crossVectors(movementVector, newNormal).normalize();
-    
-//     if (perpendicular.lengthSq() === 0) {
-//         console.warn("⚠️ Perpendicular axis is zero! Check normal computation.");
-//         return { theta1: 0, theta2: Math.PI, quaternion: new THREE.Quaternion() };
-//     }
-
-//     // ✅ Compute the projection of target onto the correct plane (perpendicular to newNormal)
-//     let projectedTarget = targetPos.clone().sub(
-//         newNormal.clone().multiplyScalar(targetPos.clone().sub(originPos).dot(newNormal))
-//     );
-
-//     // ✅ Now compute 2D IK using the **projected plane**
-//     let dx = projectedTarget.clone().sub(originPos).length();
-//     let dz = targetPos.clone().sub(projectedTarget).dot(newNormal); // Height difference
-
-//     let angles = ik_2d(dz, dx, d1, d2);
-
-//     // ✅ Compute the required rotation from `normal` to `newNormal`
-//     let fullRotation = new THREE.Quaternion();
-//     if (!normal.equals(newNormal)) {  
-//         fullRotation.setFromUnitVectors(normal.clone().normalize(), newNormal.clone().normalize());
-//     } else {
-//         fullRotation.set(0, 0, 0, 1); // ✅ Identity quaternion
-//     }
-
-//     console.log("Computed Rotation:", fullRotation);
-//     console.log("Theta1:", angles.theta1, "Theta2:", angles.theta2);
-
-//     return {
-//         theta1: angles.theta1,
-//         theta2: angles.theta2,
-//         quaternion: fullRotation
-//     };
-// }
-
-
+ 
 // The planTransition function will handle the transition between two adjacent surfaces by adjusting the robot’s legs to match the new surface orientation. There are two cases:
 // 	1.	Concave Transition:
 // 	•	The robot transitions from a surface to another at a 90-degree inward angle.
@@ -424,85 +370,4 @@ THREERobot.prototype.rotateMovingLeg = rotateMovingLeg;
 // 	•	The movement is performed around the intersection vector of the current and target surface normals.
 // 	•	The leg follows a parabolic path, lifting the robot over the edge smoothly.
 // 	•	The fixed leg follows after the moving leg reaches the new surface.
-
-
-// console.log('Global moving foot:', this.robotBones[4].getWorldPosition());
-    
-// // // Step 1: Compute movement direction
-// let currentEndEffector = this.robotBones[4].getWorldPosition().clone();
-// let direction = currentEndEffector.sub(this.origin.position).normalize();
-// console.log('direction',direction)
-// // Step 2: Project the target onto the movement plane
-// let normal = this.origin.normal.clone().normalize();    // Ensure normal is a unit vector
-// let pointOnPlane = this.origin.position.clone();        // Reference point on the plane
-// let targetPosition = this.target.position.clone();      // The point to be projected
-
-// if (Math.abs(direction.dot(normal) - 1) < 1e-6) {  
-//     direction = new THREE.Vector3(0, 1, 0); // Assign a default direction
-// }
-
-// let diff = targetPosition.clone().sub(pointOnPlane);  // Vector from plane to target
-// let distance = diff.dot(normal) / normal.lengthSq();  // Projection length
-
-
-// let projectedTarget = targetPosition.clone().sub(normal.clone().multiplyScalar(distance));
-
-// // Step 3: Compute new movement direction (from origin to projected target)
-// console.log("Projected Target:", projectedTarget);
-
-// // ✅ Step 3: Compute new movement direction (from origin to projected target)
-// let direction_new = projectedTarget.clone().sub(this.origin.position).normalize();
-
-// let norm_dir = direction.clone().normalize();
-// let norm_new_dir = direction_new.clone().normalize();
-
-// // Compute dot product
-// let dotProduct = norm_dir.dot(norm_new_dir);
-
-// // Clamp to avoid floating point errors causing NaN (due to precision issues)
-// dotProduct = Math.min(1, Math.max(-1, dotProduct));
-
-// // Compute angle in radians
-// let cross = new THREE.Vector3().crossVectors(direction, direction_new).dot(normal);
-// let theta0 = Math.atan2(cross, dotProduct);
-// console.log('theto0',theta0);
-// this.setAngle(0, -theta0);
-
-
-        // // ✅ Step 4: Define a Local Coordinate System
-        // let bAxis = normal; // B-axis is along normal
-        // let aAxis = direction_new.clone().sub(bAxis.clone().multiplyScalar(direction_new.dot(bAxis))).normalize(); // A-axis in same plane but perpendicular counterclock-wise 
-        // console.log("A-axis:", aAxis);
-        // console.log("B-axis:", bAxis);
  
-        // // ✅ Step 5: Convert Target into Local (A-B) Frame
-        // let targetInAB = new THREE.Vector2(
-        //     projectedTarget.clone().sub(this.origin.position).dot(aAxis),
-        //     projectedTarget.clone().sub(this.origin.position).dot(bAxis)
-        // );
-        // console.log("Target in Local A-B Plane:", targetInAB);
-
-        // // ✅ Step 6: Solve IK using Law of Cosines in Local A-B Frame
-
-        // let ikResult = InverseKinematics.ik2D(targetInAB.x, targetInAB.y, this.leg1, this.leg2);
-        // let theta1 = ikResult.theta1;
-        // let theta2 = ikResult.theta2;
-
-        // // ✅ Step 7: Compute Final Foot Orientation
-        // let finalNormal = this.target.normal.clone().normalize();
-        // let finalAngle = Math.atan2(finalNormal.dot(bAxis), finalNormal.dot(aAxis));
-
-        // console.log("Theta1:", theta1);
-        // console.log("Theta2:", theta2);
-        // console.log("Final Foot Angle:", finalAngle);
-
-        // // ✅ Step 8: Apply Angles
-        // this.setAngle(1, theta1);
-        // this.setAngle(2, theta2 - theta1);
-
-        // // ✅ Enforce correct final foot orientation
-        // let footCorrection = finalAngle - theta2;
-        // this.setAngle(3, footCorrection);
-
-        // this.robotGroup.updateMatrixWorld(true);
-        // console.log("After IK: Computed End-Effector Position:", this.computeEndEffectorPosition());
