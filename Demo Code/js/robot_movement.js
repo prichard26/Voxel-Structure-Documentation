@@ -1,14 +1,24 @@
 const STEP_SIZE = 3.0;  // Global step size
-const INTERMEDIARY_STEPS = 50;
+const INTERMEDIARY_STEPS = 20;
 const DELAY = 10;
 
 export function goForward(resolve) {
-    console.log("Moving forward...");
-    let movementVector = new THREE.Vector3().subVectors(this.target.position, this.origin.position).normalize();
-    let newNormal = this.target.normal.clone();
-    console.log('movment : ', movementVector, ' , normal : ',newNormal);
-    this.moveRobot(movementVector, newNormal, resolve);
+    // console.log("Moving forward...");
+    // let movementVector = new THREE.Vector3().subVectors(this.target.position, this.origin.position).normalize();
+    // let newNormal = this.target.normal.clone();
+    // console.log('movment : ', movementVector, ' , normal : ',newNormal);
+    // this.moveRobot(movementVector, newNormal, resolve);
+
+    this.setToTarget( this.target.position.x + STEP_SIZE, 
+                    this.target.position.y ,
+                    this.target.position.z+ STEP_SIZE,
+                    0,
+                    0,
+                    1);
+    // this.swapFixedLeg();
+    resolve();
 }
+
 
 export function goBackward(resolve) {
     console.log("Moving backward...");
@@ -82,33 +92,18 @@ export function planTransitionConcave(resolve) {
     });
 }
 
-// origin 000 001
-// target 100 001
-
-// STEP 1 
-// origin 000 001
-// target 102 -100
-
-// STEP 2 switch origin target 
-// origin 102 -100 
-// target 000 001
-
-// STEP 3
-// origin 102 -100 
-// target 101 -100 
-
-// STEP 4 switch origin target again
-// origin 101 -100
-// target  102 -100 
-
 export function moveRobot(movementVector, newNormal, resolve = () => {}) {  // Ensure resolve is always defined
     if (this.legMoved === undefined) this.legMoved = false;
 
     let startMovingLeg = this.target.position.clone();
-    let endMovingLeg = startMovingLeg.clone().add(movementVector.clone().multiplyScalar(STEP_SIZE));
+    console.log('startmovingleg',startMovingLeg);
+    let endMovingLeg = startMovingLeg.clone().add(movementVector.clone().multiplyScalar(STEP_SIZE)).round();
+    console.log('endmovingleg',endMovingLeg);
 
-    let control1Moving = startMovingLeg.clone().lerp(endMovingLeg, 0.33).add(newNormal.clone().multiplyScalar(STEP_SIZE / 2));
-    let control2Moving = startMovingLeg.clone().lerp(endMovingLeg, 0.66).add(newNormal.clone().multiplyScalar(STEP_SIZE / 2));
+    let control1Moving = startMovingLeg.clone().lerp(endMovingLeg, 0.33).add(newNormal.clone().multiplyScalar(STEP_SIZE ));
+    let control2Moving = startMovingLeg.clone().lerp(endMovingLeg, 0.66).add(newNormal.clone().multiplyScalar(STEP_SIZE ));
+    console.log('control1Moving',control1Moving);
+    console.log('control2Moving',control2Moving);
 
     let stepIndex = 0;
 
@@ -116,13 +111,15 @@ export function moveRobot(movementVector, newNormal, resolve = () => {}) {  // E
         if (stepIndex <= INTERMEDIARY_STEPS) {
             let t = stepIndex / INTERMEDIARY_STEPS;
             let interpolatedMovingLeg = cubicBezier(startMovingLeg, control1Moving, control2Moving, endMovingLeg, t);
-            this.setToTarget(interpolatedMovingLeg.x, interpolatedMovingLeg.y, interpolatedMovingLeg.z, newNormal.x, newNormal.y, newNormal.z, false);
+            // console.log('interpolatedMovingLeg',interpolatedMovingLeg);
+            
+            this.setToTarget(interpolatedMovingLeg.x, interpolatedMovingLeg.y, interpolatedMovingLeg.z, newNormal.x, newNormal.y, newNormal.z);
             this.displayTrajectory();
 
             stepIndex++;
             setTimeout(step, DELAY);
         } else {
-            this.setToTarget(endMovingLeg.x, endMovingLeg.y, endMovingLeg.z, newNormal.x, newNormal.y, newNormal.z, true);
+            this.setToTarget(endMovingLeg.x, endMovingLeg.y, endMovingLeg.z, newNormal.x, newNormal.y, newNormal.z);
             this.swapFixedLeg();
             if (!this.legMoved) {
                 this.legMoved = true;
@@ -158,7 +155,7 @@ export function rotateMovingLeg(rotationAxis, angleOffset, resolve = () => {}) {
             let lift = Math.sin(Math.PI * (stepIndex / INTERMEDIARY_STEPS)) * (STEP_SIZE / 3);
             interpolatedMovingLeg.add(rotationAxis.clone().normalize().multiplyScalar(lift)); // Apply elevation smoothly
 
-            this.setToTarget(interpolatedMovingLeg.x, interpolatedMovingLeg.y, interpolatedMovingLeg.z, false);
+            this.setToTarget(interpolatedMovingLeg.x, interpolatedMovingLeg.y, interpolatedMovingLeg.z, this.target.normal.x,this.target.normal.y,this.target.normal.z);
 
             if (this.showTrajectory) this.displayTrajectory();
 
