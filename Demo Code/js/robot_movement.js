@@ -2,24 +2,16 @@ const STEP_SIZE = 3.0;  // Global step size
 const INTERMEDIARY_STEPS = 200;
 const DELAY = 10;
 
+
 export function goForward(resolve) {
-    console.log("Moving forward...");
-    let movementVector = new THREE.Vector3().subVectors(this.target.position, this.origin.position).normalize();
-    let newNormal = this.target.normal.clone();
-    console.log('movment : ', movementVector, ' , normal : ',newNormal);
-    this.moveRobot(movementVector, newNormal, resolve);
+    console.log("Moving forward...");       // Swap before moving
 
-    // this.setToTarget(3, 
-    //                 0,
-    //                 3,
-    //                 1,
-    //                 0,
-    //                 0,
-    //             'Concave');
-    // this.swapFixedLeg();
-    resolve();
+    let movementVector = this.calculateMovementVector();
+    let newNormal = this.target.normal.clone(); 
+    this.moveRobot(movementVector, newNormal, () => {
+        resolve();  
+    });
 }
-
 
 export function goBackward(resolve) {
     console.log("Moving backward...");
@@ -56,25 +48,34 @@ export function planTransitionConvex(resolve){
     console.log("Plan Transition Convex...");
     this.planTransition('Convex', resolve)
 }
+// export function planTransitionConcave(resolve) {
 
+//     this.swapFixedLeg();
+
+//     if (resolve) resolve(); // ✅ Ensure resolve is called after the full transition
+
+// }
 export function planTransitionConcave(resolve) {
     let startMovingLeg = this.target.position.clone();
 
     // Step 1: Move to intermediary position
-    this.setToTarget(startMovingLeg.x, startMovingLeg.y, startMovingLeg.z + 2 * STEP_SIZE, -1, 0, 0, 'Convex');
+    this.setToTarget(startMovingLeg.x, startMovingLeg.y, startMovingLeg.z + 2 * STEP_SIZE, -1, 0, 0, 'Concave');
 
     setTimeout(() => {
         // Step 2: Swap fixed leg
         this.swapFixedLeg();
 
         setTimeout(() => {
+            let startMovingLeg = this.target.position.clone();
+
             // Step 3: Move to final position
-            this.setToTarget(startMovingLeg.x + STEP_SIZE, startMovingLeg.y + STEP_SIZE, startMovingLeg.z + STEP_SIZE, -1, 0, 0, 'Convex');
+            this.setToTarget(startMovingLeg.x + STEP_SIZE, startMovingLeg.y , startMovingLeg.z + STEP_SIZE, -1, 0, 0, 'Concave');
+            this.swapFixedLeg();
 
             if (resolve) resolve(); // ✅ Ensure resolve is called after the full transition
-        }, 20000);
+        }, 3000);
 
-    }, 2000);
+    }, 1000);
 }
 
 export function moveRobot(movementVector, newNormal, resolve = () => {}) {  // Ensure resolve is always defined
@@ -99,8 +100,7 @@ export function moveRobot(movementVector, newNormal, resolve = () => {}) {  // E
             // console.log('interpolatedMovingLeg',interpolatedMovingLeg);
             
             this.setToTarget(interpolatedMovingLeg.x, interpolatedMovingLeg.y, interpolatedMovingLeg.z, newNormal.x, newNormal.y, newNormal.z);
-            if (this.showTrajectory) this.displayTrajectory();
-
+            this.displayTrajectory();
 
             stepIndex++;
             setTimeout(step, DELAY);
@@ -251,6 +251,7 @@ function cubicBezier(p0, p1, p2, p3, t) {
 
 
 export function displayTrajectory() {
+    if (!this.showTrajectory) return; 
 
     // console.log("Displaying movement trajectory...");
     

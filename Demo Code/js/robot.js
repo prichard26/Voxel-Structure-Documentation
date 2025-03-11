@@ -6,12 +6,19 @@ export class THREERobot {
         this.angles = [0, 0, 0, 0, 0]; 
         this.joints = []; 
         this.robotBones = [];
+        this.initialGeometry = initialGeometry;
+        this.limits=limits;
         this.leg1 = initialGeometry[1][2];      
         this.leg2 = initialGeometry[2][2]; 
         this.offset = initialGeometry[3][2]; 
         this.fixed_leg = 0;             // can either be 0 or 4 
         this.transitionType = 'None';
-        this.showTrajectory = False
+        this.showTrajectory = false;
+        this.trajectoryPoints = [];     // For visualization of the movment trajectories
+
+        this.actionQueue = [];          //  Action queue to store movement actions
+        this.isExecuting = false;       //  Track if an action is being executed
+
         this.origin = { 
             position: origin.clone(), 
             normal: normal.clone().normalize() 
@@ -23,11 +30,6 @@ export class THREERobot {
         };
 
         this.direction = new THREE.Vector3().subVectors(this.target.position, this.origin.position);
-
-        this.trajectoryPoints = [];     // For visualization of the movment trajectories
-
-        this.actionQueue = [];          //  Action queue to store movement actions
-        this.isExecuting = false;       //  Track if an action is being executed
 
         this.colors = [0xaaaaba,0xbbbbbb,0xbcbcbc,0xcbcbcb,0xcccccc,0x000000];
     
@@ -41,6 +43,14 @@ export class THREERobot {
         let currentEndEffector = this.robotBones[4].getWorldPosition();
         this.direction = currentEndEffector.clone().sub(this.origin.position).normalize();
 
+        let defaultNormal = new THREE.Vector3(0, 0, 1); 
+        let rotationQuaternion = new THREE.Quaternion();
+        if (!this.origin.normal.equals(defaultNormal)) {
+            rotationQuaternion.setFromUnitVectors(defaultNormal, this.origin.normal);
+        }
+    
+        this.robotGroup.quaternion.copy(rotationQuaternion);
+    
         // Ensure `this.direction` is always valid
         if (Math.abs(this.direction.dot(normal) - 1) < 1e-6) {  
             if (this.origin.normal.x > 0.9) this.direction.set(0, 0, -1);
@@ -61,14 +71,6 @@ export class THREERobot {
         let parentObject = this.robotGroup;
     
         let fixedTargetPosition = this.target.position.clone(); 
-    
-        let defaultNormal = new THREE.Vector3(0, 0, 1); 
-        let rotationQuaternion = new THREE.Quaternion();
-        if (!this.origin.normal.equals(defaultNormal)) {
-            rotationQuaternion.setFromUnitVectors(defaultNormal, this.origin.normal);
-        }
-    
-        this.robotGroup.quaternion.copy(rotationQuaternion);
     
         let x = 0, y = 0, z = 0;
         for (let i = 0; i < initialGeometry.length; i++) {
@@ -176,7 +178,10 @@ export class THREERobot {
     }
     
     updateAnglesFromTarget() {
-        // ✅ Step 1: Define the Normal and Movement Direction
+        console.log("origin angleupdate",this.origin)
+        console.log('target angleupdate', this.target)        // ✅ Step 1: Define the Normal and Movement Direction
+
+
         let normal = this.origin.normal.clone().normalize();
     
         // ✅ Step 2: Project the Target onto the Plane Defined by `origin.normal`
@@ -207,13 +212,13 @@ export class THREERobot {
         let crossAB = new THREE.Vector3().crossVectors(normalA, normalB);
         let angleEndEffector = Math.acos(normalA.dot(normalB));
 
-        if(this.transitionType == 'Convex'){angleEndEffector *= -1;}
+        if(this.transitionType == 'Concave' || this.transitionType == "ConcaveSwap"){angleEndEffector *= -1;}
         
         // ✅ Step 6: Solve IK for the 3R Leg
         let angles = this.ik3R(targetPoint.y, targetPoint.x, this.offset, this.leg1, this.leg2, this.offset, angleEndEffector + Math.PI);
     
         console.log("Computed Joint Angles:", angles);
-    
+    // 
         // ✅ Step 7: Apply the Computed Angles
         this.setAngle(1, angles.theta1);
         this.setAngle(2, angles.theta2);
@@ -222,25 +227,34 @@ export class THREERobot {
 
         this.robotGroup.updateMatrixWorld(true);
 
-        console.log("New End-Effector Position:", this.robotBones[4].getWorldPosition());
+        // console.log("New End-Effector Position:", this.robotBones[4].getWorldPosition());
     }
 
     ik3R(x, y, L0, L1, L2, L3, psi) {
-        console.log("PSY",psi, 'cos :',Math.cos(psi),'sin ', Math.sin(psi))
+        // console.log("PSY",psi, 'cos :',Math.cos(psi),'sin ', Math.sin(psi))
         let x2, y2;
         // Step 1: Compute the intermediate target position (x2, y2) without L3
         if(this.transitionType == 'Concave'){
             x2 = x - L3 * Math.sin(-psi);
             y2 = y - L3 * Math.cos(-psi) + L0; // concave working
         }
+        else if(this.transitionType == "ConcaveSwap"){
+            x2 = x - L3 * Math.sin(psi);
+            y2 = y - L3 * Math.cos(-psi) - L0;
+        
+        }
+        else if(this.transitionType == "ConvexSwap"){
+            x2 = x - L3 * Math.sin(-psi);
+            y2 = y - L3 * Math.cos(psi) + L0; // concave working
+        }
         else{
             x2 = x - L3 * Math.sin(psi);
             y2 = y - L3 * Math.cos(psi) - L0; // concave working
         }
         
-        console.log('x2 y2', x2, y2)
-        console.log('x y', x, y)
-        console.log(L0,L3)
+        // console.log('x2 y2', x2, y2)
+        // console.log('x y', x, y)
+        // console.log(L0,L3)
         // Step 2: Compute distance from origin to (x2, y2)
         let dSquared = x2 ** 2 + y2 ** 2;
     
@@ -287,34 +301,146 @@ export class THREERobot {
 
 
     swapFixedLeg() {
-        let oldBasePosition = new THREE.Vector3();
-        let oldEndPosition = new THREE.Vector3();
+        // if (this.target.normal.equals(this.origin.normal)) {
+        //     // ✅ If the normals are the same, just swap positions and continue as before.
+        //     let oldBasePosition = new THREE.Vector3();
+        //     let oldEndPosition = new THREE.Vector3();
     
-        this.robotBones[0].getWorldPosition(oldBasePosition);
-        this.robotBones[this.robotBones.length - 1].getWorldPosition(oldEndPosition);
+        //     this.robotBones[0].getWorldPosition(oldBasePosition);
+        //     this.robotBones[this.robotBones.length - 1].getWorldPosition(oldEndPosition);
     
-        const shift = new THREE.Vector3().subVectors(oldEndPosition, oldBasePosition);
-        this.robotGroup.position.add(shift);
-        this.robotGroup.updateMatrixWorld(true);
+        //     const shift = new THREE.Vector3().subVectors(oldEndPosition, oldBasePosition);
+        //     this.robotGroup.position.add(shift);
+        //     this.robotGroup.updateMatrixWorld(true);
     
-        let temp = { ...this.origin };
-        this.origin = {
-            position: this.target.position.clone().round(),
-            normal: this.target.normal.clone()
-        };
+        //     let temp = { ...this.origin };
+        //     this.origin = {
+        //         position: this.target.position.clone().round(),
+        //         normal: this.target.normal.clone()
+        //     };
     
-        this.target = {
-            position: temp.position.clone().round(),
-            normal: temp.normal.clone()
-        };
+        //     this.target = {
+        //         position: temp.position.clone().round(),
+        //         normal: temp.normal.clone()
+        //     };
     
-        this.joints[this.fixed_leg].children[0].material.color.set(0x000000);
-        this.fixed_leg = this.fixed_leg === 0 ? 4 : 0;
-        this.joints[0].children[0].material.color.set(0x0000ff);
+        //     this.joints[this.fixed_leg].children[0].material.color.set(0x000000);
+        //     this.fixed_leg = this.fixed_leg === 0 ? 4 : 0;
+        //     this.joints[0].children[0].material.color.set(0x0000ff);
     
-        this.updateAnglesFromTarget();
+        //     this.updateAnglesFromTarget();
+        // } else {
+            // Rebuit the robot swaping the fixed and mooving leg.
+            this.reinitializeRobot();
+        // }
     }
+    
+    reinitializeRobot() {
+        let newOrigin = this.target.position.clone();
+        let newOriginNormal = this.target.normal.clone();
+        let newTarget = this.origin.position.clone();
+        let newTargetNormal = this.origin.normal.clone();
 
+
+        console.log('new origin', newOrigin);
+        console.log('new target', newTarget);
+        console.log("🔄 Reinitializing Robot with New Fixed Leg");
+        // ✅ Preserve Important Variables
+        let savedState = {
+            angles: [...this.angles], 
+            trajectoryPoints: [...this.trajectoryPoints], 
+            actionQueue: [...this.actionQueue], 
+            isExecuting: this.isExecuting,
+            transitionType: this.transitionType,
+            showTrajectory: this.showTrajectory,
+            initialGeometry: this.initialGeometry,
+            limits: this.limits
+        };
+
+        // ✅ Remove current robot from scene
+        this.scene.remove(this.robotGroup);
+
+        // // ✅ Remove All Children
+        while (this.robotGroup.children.length > 0) {
+            let child = this.robotGroup.children.pop();
+            this.robotGroup.remove(child);
+        }    
+        console.log("origin old", this.origin);
+        console.log('target old', this.target);
+        console.log('fixed leg', this.fixed_leg)
+        // // ✅ Reset essential properties
+        this.origin = { position: newOrigin.clone(), normal: newOriginNormal.clone() };
+        this.target = { position: newTarget.clone(), normal: newTargetNormal.clone() };
+        this.fixed_leg = this.fixed_leg === 0 ? 4 : 0;
+    
+        console.log("origin new", this.origin);
+        console.log("target new", this.target);
+        console.log('fixed leg', this.fixed_leg)
+
+        // // ✅ Rebuild robot structure
+        this.robotGroup = new THREE.Group();
+        this.robotGroup.position.copy(this.origin.position);
+        this.joints = []; // ✅ Reset joints to avoid keeping old references
+        this.joints = []; 
+        this.robotBones = [];
+        this.transitionType = 'None';
+
+        // ✅ Restore State Variables
+        this.angles = savedState.angles;
+        this.trajectoryPoints = savedState.trajectoryPoints;
+        this.actionQueue = savedState.actionQueue;
+        this.isExecuting = savedState.isExecuting;
+        // console.log("tTTTT",this.transitionType);
+        if(this.transitionType == "None"){this.transitionType = "Concave2"}
+        if(this.transitionType == "Convex"){this.transitionType = "Convex"}
+        this.showTrajectory = savedState.showTrajectory;
+        this.initialGeometry = savedState.initialGeometry
+        this.limits = savedState.limits
+
+        this.buildRobot(this.initialGeometry, this.limits);
+        this.scene.add(this.robotGroup);
+
+        let currentEndEffector = this.robotBones[4].getWorldPosition();
+        this.direction = currentEndEffector.clone().sub(this.origin.position).normalize();
+
+        let defaultNormal = new THREE.Vector3(0, 0, 1); 
+        let rotationQuaternion = new THREE.Quaternion();
+        if (!this.origin.normal.equals(defaultNormal)) {
+            rotationQuaternion.setFromUnitVectors(defaultNormal, this.origin.normal);
+        }
+    
+        this.robotGroup.quaternion.copy(rotationQuaternion);
+
+        if (Math.abs(this.direction.dot(this.origin.normal) - 1) < 1e-6) {  
+            if (this.origin.normal.x > 0.9) this.direction.set(0, 0, -1);
+            else if (this.origin.normal.x < -0.9) this.direction.set(0, 0, 1);
+            else if (this.origin.normal.y > 0.9) this.direction.set(1, 0, 0);
+            else if (this.origin.normal.y < -0.9) this.direction.set(1, 0, 0);
+            else if (this.origin.normal.z > 0.9) this.direction.set(1, 0, 0);
+            else if (this.origin.normal.z < -0.9) this.direction.set(-1, 0, 0);
+        }
+    
+
+        console.log(this.joints[0].children[0]);
+        this.joints[0].children[0].material.color.set(0x0000ff);
+        console.log("Updated target before reinitialization", this.target);
+
+        // // ✅ Reassign target after building robot to ensure it's correct
+        this.target.position.copy(newTarget.clone());
+        this.target.normal.copy(newTargetNormal.clone());
+    
+        console.log("Updated target after reinitialization", this.target);
+    
+    
+        console.log('SWAP1', currentEndEffector);
+    
+        // Ensur
+        // console.log("direction after reinitialization", this.direction);
+        
+        this.updateAnglesFromTarget();
+        // let currentEndEffector2 = this.robotBones[4].getWorldPosition();
+        // console.log('SWAP2', currentEndEffector2);
+    }
     computeEndEffectorPosition() {
         const lastBone = this.robotBones[this.robotBones.length - 1];
         lastBone.updateMatrixWorld(true);
