@@ -13,6 +13,7 @@ export class THREERobot {
         this.offset = initialGeometry[3][2]; 
         this.fixed_leg = 0;             // can either be 0 or 4 
         this.transitionType = 'None';
+        this.lastTransitionType = 'None';
         this.showTrajectory = false;
         this.trajectoryPoints = [];     // For visualization of the movment trajectories
 
@@ -43,14 +44,6 @@ export class THREERobot {
         let currentEndEffector = this.robotBones[4].getWorldPosition();
         this.direction = currentEndEffector.clone().sub(this.origin.position).normalize();
 
-        let defaultNormal = new THREE.Vector3(0, 0, 1); 
-        let rotationQuaternion = new THREE.Quaternion();
-        if (!this.origin.normal.equals(defaultNormal)) {
-            rotationQuaternion.setFromUnitVectors(defaultNormal, this.origin.normal);
-        }
-    
-        this.robotGroup.quaternion.copy(rotationQuaternion);
-    
         // Ensure `this.direction` is always valid
         if (Math.abs(this.direction.dot(normal) - 1) < 1e-6) {  
             if (this.origin.normal.x > 0.9) this.direction.set(0, 0, -1);
@@ -71,6 +64,14 @@ export class THREERobot {
         let parentObject = this.robotGroup;
     
         let fixedTargetPosition = this.target.position.clone(); 
+        
+        let defaultNormal = new THREE.Vector3(0, 0, 1); 
+        let rotationQuaternion = new THREE.Quaternion();
+        if (!this.origin.normal.equals(defaultNormal)) {
+            rotationQuaternion.setFromUnitVectors(defaultNormal, this.origin.normal);
+        }
+    
+        this.robotGroup.quaternion.copy(rotationQuaternion);
     
         let x = 0, y = 0, z = 0;
         for (let i = 0; i < initialGeometry.length; i++) {
@@ -175,6 +176,7 @@ export class THREERobot {
         this.target.normal.set(nx,ny,nz);
         this.transitionType = transitionType;
         this.updateAnglesFromTarget();
+        console.log(" EN POS AFTER SET TO TARGET ",this.robotBones[4].getWorldPosition())
     }
     
     updateAnglesFromTarget() {
@@ -212,17 +214,18 @@ export class THREERobot {
         let crossAB = new THREE.Vector3().crossVectors(normalA, normalB);
         let angleEndEffector = Math.acos(normalA.dot(normalB));
 
-        if(this.transitionType == 'Concave' || this.transitionType == "ConcaveSwap"){angleEndEffector *= -1;}
+        if(this.transitionType == 'Concave' || this.transitionType == "ConcaveSwap"|| this.transitionType == "ConvexSwap"){angleEndEffector *= -1;}
         
         // ✅ Step 6: Solve IK for the 3R Leg
         let angles = this.ik3R(targetPoint.y, targetPoint.x, this.offset, this.leg1, this.leg2, this.offset, angleEndEffector + Math.PI);
     
-        console.log("Computed Joint Angles:", angles);
+        // console.log("Computed Joint Angles:", angles);
     // 
         // ✅ Step 7: Apply the Computed Angles
         this.setAngle(1, angles.theta1);
         this.setAngle(2, angles.theta2);
         this.setAngle(3, angles.theta3);
+        if (this.transitionType != 'None')this.lastTransitionType = this.transitionType;
         this.transitionType = 'None';
 
         this.robotGroup.updateMatrixWorld(true);
@@ -234,23 +237,26 @@ export class THREERobot {
         // console.log("PSY",psi, 'cos :',Math.cos(psi),'sin ', Math.sin(psi))
         let x2, y2;
         // Step 1: Compute the intermediate target position (x2, y2) without L3
-        if(this.transitionType == 'Concave'){
+        if(this.transitionType == 'Convex'){
             x2 = x - L3 * Math.sin(-psi);
-            y2 = y - L3 * Math.cos(-psi) + L0; // concave working
+            y2 = y - L3 * Math.cos(-psi) - L0; // concave working
+            console.log(`hneighoygoygoyguyguy===============--==-=-==-=-=-=-=-=-=-=-`)
         }
+        else if(this.transitionType == 'ConvexSwap'){
+            x2 = x - L3 * Math.sin(-psi);
+            y2 = y - L3 * Math.cos(-psi) - L0; // concave working
+            console.log(`hneighoygoygoyguyguy===============--==-=1454-==-=-=-=-=-=-=-=-`)
+        }
+        
         else if(this.transitionType == "ConcaveSwap"){
             x2 = x - L3 * Math.sin(psi);
             y2 = y - L3 * Math.cos(-psi) - L0;
-        
-        }
-        else if(this.transitionType == "ConvexSwap"){
-            x2 = x - L3 * Math.sin(-psi);
-            y2 = y - L3 * Math.cos(psi) + L0; // concave working
         }
         else{
             x2 = x - L3 * Math.sin(psi);
             y2 = y - L3 * Math.cos(psi) - L0; // concave working
         }
+        
         
         // console.log('x2 y2', x2, y2)
         // console.log('x y', x, y)
@@ -344,6 +350,7 @@ export class THREERobot {
 
         console.log('new origin', newOrigin);
         console.log('new target', newTarget);
+        console.log('new target', newTargetNormal);
         console.log("🔄 Reinitializing Robot with New Fixed Leg");
         // ✅ Preserve Important Variables
         let savedState = {
@@ -351,7 +358,7 @@ export class THREERobot {
             trajectoryPoints: [...this.trajectoryPoints], 
             actionQueue: [...this.actionQueue], 
             isExecuting: this.isExecuting,
-            transitionType: this.transitionType,
+            lastTransitionType : this.lastTransitionType,
             showTrajectory: this.showTrajectory,
             initialGeometry: this.initialGeometry,
             limits: this.limits
@@ -391,8 +398,9 @@ export class THREERobot {
         this.actionQueue = savedState.actionQueue;
         this.isExecuting = savedState.isExecuting;
         // console.log("tTTTT",this.transitionType);
-        if(this.transitionType == "None"){this.transitionType = "Concave2"}
-        if(this.transitionType == "Convex"){this.transitionType = "Convex"}
+        if(this.lastTransitionType == "Concave"){this.transitionType = "ConcaveSwap"}
+        if(this.lastTransitionType == "Convex"){this.transitionType = "ConvexSwap"}
+
         this.showTrajectory = savedState.showTrajectory;
         this.initialGeometry = savedState.initialGeometry
         this.limits = savedState.limits
