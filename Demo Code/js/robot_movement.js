@@ -1,20 +1,21 @@
 const STEP_SIZE = 3.0;  // Global step size
-const INTERMEDIARY_STEPS = 20;
+const INTERMEDIARY_STEPS = 200;
 const DELAY = 10;
 
 export function goForward(resolve) {
-    // console.log("Moving forward...");
-    // let movementVector = new THREE.Vector3().subVectors(this.target.position, this.origin.position).normalize();
-    // let newNormal = this.target.normal.clone();
-    // console.log('movment : ', movementVector, ' , normal : ',newNormal);
-    // this.moveRobot(movementVector, newNormal, resolve);
+    console.log("Moving forward...");
+    let movementVector = new THREE.Vector3().subVectors(this.target.position, this.origin.position).normalize();
+    let newNormal = this.target.normal.clone();
+    console.log('movment : ', movementVector, ' , normal : ',newNormal);
+    this.moveRobot(movementVector, newNormal, resolve);
 
-    this.setToTarget( this.target.position.x + STEP_SIZE, 
-                    this.target.position.y ,
-                    this.target.position.z+ STEP_SIZE,
-                    0,
-                    0,
-                    1);
+    // this.setToTarget(3, 
+    //                 0,
+    //                 3,
+    //                 1,
+    //                 0,
+    //                 0,
+    //             'Concave');
     // this.swapFixedLeg();
     resolve();
 }
@@ -57,39 +58,23 @@ export function planTransitionConvex(resolve){
 }
 
 export function planTransitionConcave(resolve) {
-    console.log("Performing Concave Transition...");
+    let startMovingLeg = this.target.position.clone();
 
-    let movementVector = this.calculateMovementVector();
-    let currentNormal = this.origin.normal.clone();
-    let targetNormal = this.target.normal.clone();
+    // Step 1: Move to intermediary position
+    this.setToTarget(startMovingLeg.x, startMovingLeg.y, startMovingLeg.z + 2 * STEP_SIZE, -1, 0, 0, 'Convex');
 
-    // ✅ Compute the rotation axis (perpendicular to both normal vectors)
-    let rotationAxis = new THREE.Vector3().crossVectors(currentNormal, targetNormal).normalize();
+    setTimeout(() => {
+        // Step 2: Swap fixed leg
+        this.swapFixedLeg();
 
-    if (rotationAxis.lengthSq() === 0) {
-        console.log("⚠️ Rotation axis is zero! The two normals might be the same.");
-        resolve();
-        return;
-    }
+        setTimeout(() => {
+            // Step 3: Move to final position
+            this.setToTarget(startMovingLeg.x + STEP_SIZE, startMovingLeg.y + STEP_SIZE, startMovingLeg.z + STEP_SIZE, -1, 0, 0, 'Convex');
 
-    // Step 1: Rotate moving leg onto the new perpendicular surface
-    this.rotateMovingLeg(rotationAxis, Math.PI / 2, () => {
-        // Step 2: Move moving leg 2 steps along the new surface
-        let transitionVector = targetNormal.clone().multiplyScalar(STEP_SIZE * 2);
-        this.moveRobot(transitionVector, targetNormal, () => {
-            // Step 3: Swap legs (new leg is now fixed)
-            this.swapFixedLeg();
+            if (resolve) resolve(); // ✅ Ensure resolve is called after the full transition
+        }, 20000);
 
-            // Step 4: Move new moving leg 1 step along new surface
-            let followUpVector = movementVector.clone().multiplyScalar(STEP_SIZE);
-            this.moveRobot(followUpVector, targetNormal, () => {
-                // Step 5: Swap legs again (restore original stepping)
-                this.swapFixedLeg();
-                console.log("✅ Concave transition complete.");
-                resolve();
-            });
-        });
-    });
+    }, 2000);
 }
 
 export function moveRobot(movementVector, newNormal, resolve = () => {}) {  // Ensure resolve is always defined
@@ -114,7 +99,8 @@ export function moveRobot(movementVector, newNormal, resolve = () => {}) {  // E
             // console.log('interpolatedMovingLeg',interpolatedMovingLeg);
             
             this.setToTarget(interpolatedMovingLeg.x, interpolatedMovingLeg.y, interpolatedMovingLeg.z, newNormal.x, newNormal.y, newNormal.z);
-            this.displayTrajectory();
+            if (this.showTrajectory) this.displayTrajectory();
+
 
             stepIndex++;
             setTimeout(step, DELAY);
@@ -265,7 +251,6 @@ function cubicBezier(p0, p1, p2, p3, t) {
 
 
 export function displayTrajectory() {
-    if (!this.showTrajectory) return; 
 
     // console.log("Displaying movement trajectory...");
     
