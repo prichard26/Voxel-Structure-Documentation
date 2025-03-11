@@ -45,6 +45,53 @@ export function halfturn(resolve) {
 }
 
  
+export function planTransitionConvex(resolve) {
+    let startMovingLeg = this.target.position.clone();
+
+    let movementVector = this.calculateMovementVector();
+    let currentNormal = this.origin.normal.clone();
+
+    // Step 1: Move to intermediary position
+    // Compute step distances
+    let step1 = movementVector.clone().multiplyScalar(0.5 * STEP_SIZE);    // Move forward
+    let step2 = currentNormal.clone().multiplyScalar(1.5 * STEP_SIZE); // Move onto the new surface
+
+    // Compute perpendicular transition axis (rotation axis)
+    let rotationAxis = new THREE.Vector3().crossVectors(movementVector, currentNormal).normalize();
+    let quaternion = new THREE.Quaternion().setFromAxisAngle(rotationAxis, -Math.PI / 2);
+    let newNormal = currentNormal.clone().applyQuaternion(quaternion).normalize();
+
+    // ✅ Step 1: Move to intermediary position (before transitioning fully)
+    let intermediaryPosition = startMovingLeg.clone().add(step1).sub(step2);
+
+    this.setToTarget(intermediaryPosition.x, intermediaryPosition.y, intermediaryPosition.z, 
+                     newNormal.x, newNormal.y, newNormal.z, 'Convex');
+    console.log("intermediaryPosition",intermediaryPosition)
+    console.log(" EN POS AFTER SET TO TARGEdddddddT ",this.robotBones[4].getWorldPosition())
+
+    setTimeout(() => {
+        // Step 2: Swap fixed leg
+        this.swapFixedLeg();
+
+        setTimeout(() => {
+            let startMovingLeg = this.target.position.clone();
+
+            let step3 = movementVector.clone().multiplyScalar(1.5 * STEP_SIZE);    // Move forward
+            let step4 = currentNormal.clone().multiplyScalar(0.5 * STEP_SIZE); // Move onto the new surface
+            let intermediaryPosition2 = startMovingLeg.clone().add(step3).sub(step4);
+
+            this.setToTarget(intermediaryPosition2.x, intermediaryPosition2.y, intermediaryPosition2.z, 
+                newNormal.x, newNormal.y, newNormal.z, 'Convexswap');
+
+            // Step 3: Move to final position
+            this.swapFixedLeg();
+
+            if (resolve) resolve(); // ✅ Ensure resolve is called after the full transition
+        }, 3000);
+
+    }, 3000);
+}
+
 export function planTransitionConcave(resolve) {
     let startMovingLeg = this.target.position.clone();
 
@@ -85,34 +132,33 @@ export function planTransitionConcave(resolve) {
             this.swapFixedLeg();
 
             if (resolve) resolve(); // ✅ Ensure resolve is called after the full transition
-        }, 3000);
+        }, 1000);
 
     }, 1000);
 }
 
+// export function planTransitionConvex(resolve) {
+//     let startMovingLeg = this.target.position.clone();
 
-export function planTransitionConvex(resolve) {
-    let startMovingLeg = this.target.position.clone();
+//     // Step 1: Move to intermediary position
+//     this.setToTarget(startMovingLeg.x + STEP_SIZE, startMovingLeg.y, startMovingLeg.z - 2 * STEP_SIZE, 1, 0, 0, 'Convex');
 
-    // Step 1: Move to intermediary position
-    this.setToTarget(startMovingLeg.x + STEP_SIZE, startMovingLeg.y, startMovingLeg.z - 2 * STEP_SIZE, 1, 0, 0, 'Convex');
+//     setTimeout(() => {
+//         // Step 2: Swap fixed leg
+//         this.swapFixedLeg();
 
-    setTimeout(() => {
-        // Step 2: Swap fixed leg
-        this.swapFixedLeg();
+//         setTimeout(() => {
+//             let startMovingLeg = this.target.position.clone();
 
-        setTimeout(() => {
-            let startMovingLeg = this.target.position.clone();
+//             // Step 3: Move to final position
+//             this.setToTarget(startMovingLeg.x + STEP_SIZE, startMovingLeg.y , startMovingLeg.z - STEP_SIZE, 1, 0, 0, 'Convex');
+//             this.swapFixedLeg();
 
-            // Step 3: Move to final position
-            this.setToTarget(startMovingLeg.x + STEP_SIZE, startMovingLeg.y , startMovingLeg.z - STEP_SIZE, 1, 0, 0, 'Convex');
-            this.swapFixedLeg();
+//             if (resolve) resolve(); // ✅ Ensure resolve is called after the full transition
+//         }, 10000);
 
-            if (resolve) resolve(); // ✅ Ensure resolve is called after the full transition
-        }, 10000);
-
-    }, 10000);
-}
+//     }, 10000);
+// }
 
 export function moveRobot(movementVector, newNormal, resolve = () => {}) {  // Ensure resolve is always defined
     if (this.legMoved === undefined) this.legMoved = false;

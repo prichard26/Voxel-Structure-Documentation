@@ -64,7 +64,7 @@ export class THREERobot {
         let parentObject = this.robotGroup;
     
         let fixedTargetPosition = this.target.position.clone(); 
-        
+
         let defaultNormal = new THREE.Vector3(0, 0, 1); 
         let rotationQuaternion = new THREE.Quaternion();
         if (!this.origin.normal.equals(defaultNormal)) {
@@ -172,6 +172,8 @@ export class THREERobot {
     }
     
     setToTarget(px, py, pz, nx,ny,nz, transitionType = null) {
+        console.log(" EN POS RECEIVED ",px, py, pz, nx,ny,nz)
+
         this.target.position.set(px, py, pz);
         this.target.normal.set(nx,ny,nz);
         this.transitionType = transitionType;
@@ -214,7 +216,7 @@ export class THREERobot {
         let crossAB = new THREE.Vector3().crossVectors(normalA, normalB);
         let angleEndEffector = Math.acos(normalA.dot(normalB));
 
-        if(this.transitionType == 'Concave' || this.transitionType == "ConcaveSwap"|| this.transitionType == "ConvexSwap"){angleEndEffector *= -1;}
+        if(this.transitionType == 'Concave' || this.transitionType == "ConcaveSwap" ){angleEndEffector *= -1;}
         
         // ✅ Step 6: Solve IK for the 3R Leg
         let angles = this.ik3R(targetPoint.y, targetPoint.x, this.offset, this.leg1, this.leg2, this.offset, angleEndEffector + Math.PI);
@@ -236,16 +238,18 @@ export class THREERobot {
     ik3R(x, y, L0, L1, L2, L3, psi) {
         // console.log("PSY",psi, 'cos :',Math.cos(psi),'sin ', Math.sin(psi))
         let x2, y2;
+        console.log("GOOOAAAAALLL",x,y,psi)
+
         // Step 1: Compute the intermediate target position (x2, y2) without L3
         if(this.transitionType == 'Convex'){
             x2 = x - L3 * Math.sin(-psi);
-            y2 = y - L3 * Math.cos(-psi) - L0; // concave working
+            y2 = y - L3 * Math.cos(-psi) + L0; // concave working
             console.log(`hneighoygoygoyguyguy===============--==-=-==-=-=-=-=-=-=-=-`)
         }
         else if(this.transitionType == 'ConvexSwap'){
             x2 = x - L3 * Math.sin(-psi);
-            y2 = y - L3 * Math.cos(-psi) - L0; // concave working
-            console.log(`hneighoygoygoyguyguy===============--==-=1454-==-=-=-=-=-=-=-=-`)
+            y2 = y - L3 * Math.cos(psi) + L0; // concave working
+            console.log(`hneighoygoygoyguyguy===============--==-=1454-==-=-=-=-=-=-=-=-`, x2,y2)
         }
         
         else if(this.transitionType == "ConcaveSwap"){
