@@ -14,6 +14,10 @@ export function setupGUI(robotInstance) {
     mvtListGui.add({ moveBackward: () => robotInstance.enqueueAction("goBackward") }, 'moveBackward');
     mvtListGui.add({ turnRight: () => robotInstance.enqueueAction("turnRight") }, 'turnRight');
     mvtListGui.add({ turnLeft: () => robotInstance.enqueueAction("turnLeft") }, 'turnLeft');
+    mvtListGui.add({ climbUp: () => robotInstance.enqueueAction("climbUp") }, 'climbUp');
+    mvtListGui.add({ climbDown: () => robotInstance.enqueueAction("climbDown") }, 'climbDown');
+
+
     mvtListGui.add({ planTransitionConvex: () => robotInstance.enqueueAction("planTransitionConvex") }, 'planTransitionConvex');
     mvtListGui.add({ planTransitionConcave: () => robotInstance.enqueueAction("planTransitionConcave") }, 'planTransitionConcave');
 

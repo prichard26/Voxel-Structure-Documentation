@@ -1,4 +1,4 @@
-import { goForward, goBackward, turnRight, turnLeft, planTransitionConcave, planTransitionConvex, moveRobot, rotateMovingLeg, calculateMovementVector, displayTrajectory, clearTrajectory,interpolateMovement } from "./robot_movement.js";
+import { goForward, goBackward, turnRight, turnLeft, climbUp, climbDown, planTransitionConcave, planTransitionConvex, moveRobot, rotateMovingLeg, calculateMovementVector, displayTrajectory, clearTrajectory,interpolateMovement, moveLegBezier } from "./robot_movement.js";
 
 export class THREERobot {
     constructor(initialGeometry, limits, origin, target, normal, scene) {
@@ -489,6 +489,8 @@ export class THREERobot {
             else if (action === "goBackward") this.goBackward(resolve);
             else if (action === "turnRight") this.turnRight(resolve);
             else if (action === "turnLeft") this.turnLeft(resolve);
+            else if (action === "climbUp") this.climbUp(resolve);
+            else if (action === "climbDown") this.climbDown(resolve);
             else if (action === "planTransitionConcave") this.planTransitionConcave(resolve);
             else if (action === "planTransitionConvex") this.planTransitionConvex(resolve);
             else resolve(); 
@@ -508,7 +510,9 @@ THREERobot.prototype.calculateMovementVector = calculateMovementVector;
 THREERobot.prototype.displayTrajectory = displayTrajectory;
 THREERobot.prototype.clearTrajectory = clearTrajectory;
 THREERobot.prototype.rotateMovingLeg = rotateMovingLeg;
-
+THREERobot.prototype.moveLegBezier =moveLegBezier;
+THREERobot.prototype.climbDown = climbDown;
+THREERobot.prototype.climbUp = climbUp;
 
 THREERobot.prototype.interpolateMovement =interpolateMovement;
 // The planTransition function will handle the transition between two adjacent surfaces by adjusting the robot’s legs to match the new surface orientation. There are two cases:
