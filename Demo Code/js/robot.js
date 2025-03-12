@@ -1,4 +1,4 @@
-import { goForward, goBackward, turnRight, turnLeft, planTransitionConcave, planTransitionConvex, moveRobot, rotateMovingLeg, calculateMovementVector, calculateRotationVector, displayTrajectory, clearTrajectory, planTransition } from "./robot_movement.js";
+import { goForward, goBackward, turnRight, turnLeft, planTransitionConcave, planTransitionConvex, moveRobot, rotateMovingLeg, calculateMovementVector, displayTrajectory, clearTrajectory,interpolateMovement } from "./robot_movement.js";
 
 export class THREERobot {
     constructor(initialGeometry, limits, origin, target, normal, scene) {
@@ -172,18 +172,18 @@ export class THREERobot {
     }
     
     setToTarget(px, py, pz, nx,ny,nz, transitionType = null) {
-        console.log(" EN POS RECEIVED ",px, py, pz, nx,ny,nz)
+        // console.log(" EN POS RECEIVED ",px, py, pz, nx,ny,nz)
 
         this.target.position.set(px, py, pz);
         this.target.normal.set(nx,ny,nz);
         this.transitionType = transitionType;
         this.updateAnglesFromTarget();
-        console.log(" EN POS AFTER SET TO TARGET ",this.robotBones[4].getWorldPosition())
+        // console.log(" EN POS AFTER SET TO TARGET ",this.robotBones[4].getWorldPosition())
     }
     
     updateAnglesFromTarget() {
-        console.log("origin angleupdate",this.origin)
-        console.log('target angleupdate', this.target)        // ✅ Step 1: Define the Normal and Movement Direction
+        // console.log("origin angleupdate",this.origin)
+        // console.log('target angleupdate', this.target)        // ✅ Step 1: Define the Normal and Movement Direction
 
 
         let normal = this.origin.normal.clone().normalize();
@@ -238,18 +238,18 @@ export class THREERobot {
     ik3R(x, y, L0, L1, L2, L3, psi) {
         // console.log("PSY",psi, 'cos :',Math.cos(psi),'sin ', Math.sin(psi))
         let x2, y2;
-        console.log("GOOOAAAAALLL",x,y,psi)
+        // console.log("GOOOAAAAALLL",x,y,psi)
 
         // Step 1: Compute the intermediate target position (x2, y2) without L3
         if(this.transitionType == 'Convex'){
             x2 = x - L3 * Math.sin(-psi);
             y2 = y - L3 * Math.cos(-psi) + L0; // concave working
-            console.log(`hneighoygoygoyguyguy===============--==-=-==-=-=-=-=-=-=-=-`)
+            // console.log(`hneighoygoygoyguyguy===============--==-=-==-=-=-=-=-=-=-=-`)
         }
         else if(this.transitionType == 'ConvexSwap'){
             x2 = x - L3 * Math.sin(-psi);
             y2 = y - L3 * Math.cos(psi) + L0; // concave working
-            console.log(`hneighoygoygoyguyguy===============--==-=1454-==-=-=-=-=-=-=-=-`, x2,y2)
+            // console.log(`hneighoygoygoyguyguy===============--==-=1454-==-=-=-=-=-=-=-=-`, x2,y2)
         }
         
         else if(this.transitionType == "ConcaveSwap"){
@@ -352,10 +352,10 @@ export class THREERobot {
         let newTargetNormal = this.origin.normal.clone();
 
 
-        console.log('new origin', newOrigin);
-        console.log('new target', newTarget);
-        console.log('new target', newTargetNormal);
-        console.log("🔄 Reinitializing Robot with New Fixed Leg");
+        // console.log('new origin', newOrigin);
+        // console.log('new target', newTarget);
+        // console.log('new target', newTargetNormal);
+        // console.log("🔄 Reinitializing Robot with New Fixed Leg");
         // ✅ Preserve Important Variables
         let savedState = {
             angles: [...this.angles], 
@@ -376,17 +376,17 @@ export class THREERobot {
             let child = this.robotGroup.children.pop();
             this.robotGroup.remove(child);
         }    
-        console.log("origin old", this.origin);
-        console.log('target old', this.target);
-        console.log('fixed leg', this.fixed_leg)
+        // console.log("origin old", this.origin);
+        // console.log('target old', this.target);
+        // console.log('fixed leg', this.fixed_leg)
         // // ✅ Reset essential properties
         this.origin = { position: newOrigin.clone(), normal: newOriginNormal.clone() };
         this.target = { position: newTarget.clone(), normal: newTargetNormal.clone() };
         this.fixed_leg = this.fixed_leg === 0 ? 4 : 0;
     
-        console.log("origin new", this.origin);
-        console.log("target new", this.target);
-        console.log('fixed leg', this.fixed_leg)
+        // console.log("origin new", this.origin);
+        // console.log("target new", this.target);
+        // console.log('fixed leg', this.fixed_leg)
 
         // // ✅ Rebuild robot structure
         this.robotGroup = new THREE.Group();
@@ -435,16 +435,16 @@ export class THREERobot {
 
         console.log(this.joints[0].children[0]);
         this.joints[0].children[0].material.color.set(0x0000ff);
-        console.log("Updated target before reinitialization", this.target);
+        // console.log("Updated target before reinitialization", this.target);
 
         // // ✅ Reassign target after building robot to ensure it's correct
         this.target.position.copy(newTarget.clone());
         this.target.normal.copy(newTargetNormal.clone());
     
-        console.log("Updated target after reinitialization", this.target);
+        // console.log("Updated target after reinitialization", this.target);
     
     
-        console.log('SWAP1', currentEndEffector);
+        // console.log('SWAP1', currentEndEffector);
     
         // Ensur
         // console.log("direction after reinitialization", this.direction);
@@ -503,14 +503,14 @@ THREERobot.prototype.turnRight = turnRight;
 THREERobot.prototype.turnLeft = turnLeft;
 THREERobot.prototype.planTransitionConcave = planTransitionConcave;
 THREERobot.prototype.planTransitionConvex = planTransitionConvex;
-THREERobot.prototype.planTransition = planTransition;
 THREERobot.prototype.moveRobot = moveRobot;
 THREERobot.prototype.calculateMovementVector = calculateMovementVector;
-THREERobot.prototype.calculateRotationVector = calculateRotationVector;
 THREERobot.prototype.displayTrajectory = displayTrajectory;
 THREERobot.prototype.clearTrajectory = clearTrajectory;
 THREERobot.prototype.rotateMovingLeg = rotateMovingLeg;
- 
+
+
+THREERobot.prototype.interpolateMovement =interpolateMovement;
 // The planTransition function will handle the transition between two adjacent surfaces by adjusting the robot’s legs to match the new surface orientation. There are two cases:
 // 	1.	Concave Transition:
 // 	•	The robot transitions from a surface to another at a 90-degree inward angle.

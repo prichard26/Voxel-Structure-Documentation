@@ -1,407 +1,311 @@
-import { goForward, goBackward, turnRight, turnLeft, planTransitionConcave, planTransitionConvex, moveRobot, rotateMovingLeg, calculateMovementVector, calculateRotationVector, displayTrajectory, clearTrajectory, planTransition } from "./robot_movement.js";
+const STEP_SIZE = 3.0;  // Global step size
+const INTERMEDIARY_STEPS = 20;
+const DELAY = 10;
 
-export class THREERobot {
-    constructor(initialGeometry, limits, origin, target, normal, scene) {
-        this.scene = scene;
-        this.angles = [0, 0, 0, 0, 0]; 
-        this.joints = []; 
-        this.robotBones = [];
-        this.leg1 = initialGeometry[1][2];      
-        this.leg2 = initialGeometry[2][2]; 
-        this.offset = initialGeometry[4][2]; 
-        this.fixed_leg = 0;             // can either be 0 or 4 
-        this.transitionType = 'None';
-        
-        this.origin = { 
-            position: origin.clone(), 
-            normal: normal.clone().normalize() 
-        };
+export function goForward(resolve) {
+    console.log("Moving forward...");      
+    let movementVector = this.calculateMovementVector();
+    let newNormal = this.target.normal.clone(); 
+    this.moveRobot(movementVector, newNormal, () => {
+        resolve();  
+    });
+}
 
-        this.target = { 
-            position: target.clone(), 
-            normal: normal.clone().normalize() 
-        };
+export function goBackward(resolve) {
+    console.log("Moving backward...");
+    this.swapFixedLeg();    
 
-        this.direction = new THREE.Vector3().subVectors(this.target.position, this.origin.position);
+    let movementVector = this.calculateMovementVector();
+    let newNormal = this.target.normal.clone(); 
+    this.moveRobot(movementVector, newNormal, () => {
+        this.swapFixedLeg();  
+        resolve();  
+    });
+}
 
-        this.trajectoryPoints = [];     // For visualization of the movment trajectories
+export function turnRight(resolve) {
+    console.log("Turning right...");
+    let rotationAxis = this.origin.normal.clone();
+    this.rotateMovingLeg(rotationAxis, -Math.PI / 2, resolve);
+}
 
-        this.actionQueue = [];          //  Action queue to store movement actions
-        this.isExecuting = false;       //  Track if an action is being executed
+export function turnLeft(resolve) {
+    console.log("Turning left...");
+    let rotationAxis = this.origin.normal.clone();
+    this.rotateMovingLeg(rotationAxis, Math.PI / 2, resolve);
+}
 
-        this.colors = [0xaaaaba,0xbbbbbb,0xbcbcbc,0xcbcbcb,0xcccccc,0x000000];
-    
-        this.robotGroup = new THREE.Group();
-        this.robotGroup.position.copy(origin); 
+export function halfturn(resolve) {
+    console.log("Turning Half...");
+    let rotationAxis = this.origin.normal.clone();
 
-        this.buildRobot(initialGeometry, limits);
-        this.scene.add(this.robotGroup);
+    this.rotateMovingLeg(rotationAxis, Math.PI, resolve);
+}
 
+export function planTransitionConvex(resolve) {
+    let startMovingLeg = this.target.position.clone();
+    let movementVector = this.calculateMovementVector();
+    let currentNormal = this.origin.normal.clone();
 
-        let currentEndEffector = this.robotBones[4].getWorldPosition();
-        console.log(`current end effector pos :`, currentEndEffector);
-        this.direction = currentEndEffector.clone().sub(this.origin.position).normalize();
-        console.log(`n`,normal,`d :`, this.direction);
+    // ✅ Step 1: Compute step distances
+    let step1 = movementVector.clone().multiplyScalar(0.5 * STEP_SIZE); // Move forward
+    let step2 = currentNormal.clone().multiplyScalar(1.5 * STEP_SIZE);  // Move down onto new surface
 
-        // Ensure `this.direction` is always valid
-        if (Math.abs(this.direction.dot(normal) - 1) < 1e-6) {  
-            console.log(`hhhahhahahhhhhahhh`);
-            if (this.origin.normal.x > 0.9) this.direction.set(0, 0, -1);
-            else if (this.origin.normal.x < -0.9) this.direction.set(0, 0, 1);
-            else if (this.origin.normal.y > 0.9) this.direction.set(1, 0, 0);
-            else if (this.origin.normal.y < -0.9) this.direction.set(1, 0, 0);
-            else if (this.origin.normal.z > 0.9) this.direction.set(1, 0, 0);
-            else if (this.origin.normal.z < -0.9) this.direction.set(-1, 0, 0);
-            console.log(`n`,normal,`d :`, this.direction);
+    // ✅ Step 2: Compute new normal (-90° rotation)
+    let rotationAxis = new THREE.Vector3().crossVectors(movementVector, currentNormal).normalize();
+    let newNormal = currentNormal.clone().applyAxisAngle(rotationAxis, -Math.PI / 2).normalize();
 
+    // ✅ Step 3: Compute intermediary position (before full transition)
+    let intermediaryPosition = startMovingLeg.clone().add(step1).sub(step2);
+
+    // ✅ Step 4: Move first leg to intermediary position smoothly
+    this.interpolateStep(startMovingLeg, intermediaryPosition, currentNormal, newNormal, 'Convex', () => {
+        this.swapFixedLeg(); // ✅ Step 5: Swap fixed leg after first movement
+
+        let startMovingLeg2 = this.target.position.clone();
+        let step3 = movementVector.clone().multiplyScalar(1.5 * STEP_SIZE); // Move second leg forward
+        let step4 = currentNormal.clone().multiplyScalar(0.5 * STEP_SIZE);  // Move slightly onto new surface
+
+        let secondLegPosition = startMovingLeg2.clone().add(step3).sub(step4);
+
+        // ✅ Step 6: Move second leg to final position
+        this.interpolateStep(startMovingLeg2, secondLegPosition, currentNormal, newNormal, 'Convex',() => {
+            this.swapFixedLeg(); // ✅ Step 7: Swap fixed leg after final move
+            if (resolve) resolve();
+        });
+    });
+}
+
+export function planTransitionConcave(resolve) {
+    let startMovingLeg = this.target.position.clone();
+
+    let movementVector = this.calculateMovementVector();
+    let currentNormal = this.origin.normal.clone();
+
+    // Step 1: Move to intermediary position
+    // Compute step distances
+    let step1 = movementVector.clone().multiplyScalar(0.5 * STEP_SIZE);    // Move forward
+    let step2 = currentNormal.clone().multiplyScalar(1.5 * STEP_SIZE); // Move onto the new surface
+
+    // Compute perpendicular transition axis (rotation axis)
+    let rotationAxis = new THREE.Vector3().crossVectors(movementVector, currentNormal).normalize();
+    let quaternion = new THREE.Quaternion().setFromAxisAngle(rotationAxis, Math.PI / 2);
+    let newNormal = currentNormal.clone().applyQuaternion(quaternion).normalize();
+
+    // ✅ Step 1: Move to intermediary position (before transitioning fully)
+    let intermediaryPosition = startMovingLeg.clone().add(step1).add(step2);
+    // console.log("intermediaryPosition",intermediaryPosition)
+
+    this.setToTarget(intermediaryPosition.x, intermediaryPosition.y, intermediaryPosition.z, 
+                     newNormal.x, newNormal.y, newNormal.z, 'Concave');
+    setTimeout(() => {
+        // Step 2: Swap fixed leg
+        this.swapFixedLeg();
+
+        setTimeout(() => {
+            let startMovingLeg = this.target.position.clone();
+
+            let step3 = movementVector.clone().multiplyScalar(1.5 * STEP_SIZE);    // Move forward
+            let step4 = currentNormal.clone().multiplyScalar(0.5 * STEP_SIZE); // Move onto the new surface
+            let intermediaryPosition2 = startMovingLeg.clone().add(step3).add(step4);
+
+            this.setToTarget(intermediaryPosition2.x, intermediaryPosition2.y, intermediaryPosition2.z, 
+                newNormal.x, newNormal.y, newNormal.z, 'Concave');
+
+            // Step 3: Move to final position
+            this.swapFixedLeg();
+
+            if (resolve) resolve(); // ✅ Ensure resolve is called after the full transition
+        }, 100);
+
+    }, 100);
+}
+
+export function moveRobot(movementVector, newNormal, resolve = () => {}) {  // Ensure resolve is always defined
+    if (this.legMoved === undefined) this.legMoved = false;
+
+    let startMovingLeg = this.target.position.clone();
+    let endMovingLeg = startMovingLeg.clone().add(movementVector.clone().multiplyScalar(STEP_SIZE)).round();
+
+    let control1Moving = startMovingLeg.clone().lerp(endMovingLeg, 0.33).add(newNormal.clone().multiplyScalar(STEP_SIZE ));
+    let control2Moving = startMovingLeg.clone().lerp(endMovingLeg, 0.66).add(newNormal.clone().multiplyScalar(STEP_SIZE ));
+
+    let stepIndex = 0;
+
+    const step = () => {
+        if (stepIndex <= INTERMEDIARY_STEPS) {
+            let t = stepIndex / INTERMEDIARY_STEPS;
+            let interpolatedMovingLeg = cubicBezier(startMovingLeg, control1Moving, control2Moving, endMovingLeg, t);
+            
+            this.setToTarget(interpolatedMovingLeg.x, interpolatedMovingLeg.y, interpolatedMovingLeg.z, newNormal.x, newNormal.y, newNormal.z);
+            this.displayTrajectory();
+
+            stepIndex++;
+            setTimeout(step, DELAY);
+        } else {
+            this.setToTarget(endMovingLeg.x, endMovingLeg.y, endMovingLeg.z, newNormal.x, newNormal.y, newNormal.z);
+            this.swapFixedLeg();
+            if (!this.legMoved) {
+                this.legMoved = true;
+                this.moveRobot(movementVector, newNormal, resolve);
+            } else {
+                this.legMoved = false;
+                resolve(); 
+            }
         }
-        this.updateAnglesFromTarget();
+    };
+    step();
+}
 
-        this.target.position.copy(this.computeEndEffectorPosition());
 
-        this.joints[this.fixed_leg].children[0].material.color.set(0x0000ff);
-    }
-    
-    buildRobot(initialGeometry, limits) {
-        let parentObject = this.robotGroup;
-    
-        let fixedTargetPosition = this.target.position.clone(); 
-    
-        let defaultNormal = new THREE.Vector3(0, 0, 1); 
-        let rotationQuaternion = new THREE.Quaternion();
-        if (!this.origin.normal.equals(defaultNormal)) {
-            rotationQuaternion.setFromUnitVectors(defaultNormal, this.origin.normal);
+export function rotateMovingLeg(rotationAxis, angleOffset, resolve = () => {}) {  
+    let startMovingLeg = this.target.position.clone();
+    let fixedLeg = this.origin.position.clone();
+
+    // ✅ Compute the initial relative position
+    let relativeStart = startMovingLeg.clone().sub(fixedLeg); // Vector from fixed to moving leg
+    let angleStep = angleOffset / INTERMEDIARY_STEPS; // Rotation increment per step
+
+    let stepIndex = 0;
+
+    const step = () => {
+        if (stepIndex <= INTERMEDIARY_STEPS) {
+            let angle = stepIndex * angleStep; // Compute the incremental rotation
+            let quaternion = new THREE.Quaternion().setFromAxisAngle(rotationAxis, angle); // Rotate around the correct axis
+            let rotatedVector = relativeStart.clone().applyQuaternion(quaternion); // Apply rotation
+            let interpolatedMovingLeg = fixedLeg.clone().add(rotatedVector); // Compute new moving leg position
+
+            // ✅ Introduce smooth arc elevation
+            let lift = Math.sin(Math.PI * (stepIndex / INTERMEDIARY_STEPS)) * (STEP_SIZE / 3);
+            interpolatedMovingLeg.add(rotationAxis.clone().normalize().multiplyScalar(lift)); // Apply elevation smoothly
+
+            this.setToTarget(interpolatedMovingLeg.x, interpolatedMovingLeg.y, interpolatedMovingLeg.z, this.target.normal.x,this.target.normal.y,this.target.normal.z);
+
+            if (this.showTrajectory) this.displayTrajectory();
+
+            stepIndex++;
+            setTimeout(step, DELAY);
+        } else {
+            if (resolve) resolve(); // ✅ Ensure resolve is called safely
         }
-    
-        this.robotGroup.quaternion.copy(rotationQuaternion);
-    
-        let x = 0, y = 0, z = 0;
-        for (let i = 0; i < initialGeometry.length; i++) {
-            let link = initialGeometry[i];
-            let jointLimits = limits[i];
-    
-            let linkGeo = this.createJointBone(
-                x, y, z,
-                link[0], link[1], link[2],
-                jointLimits[0], jointLimits[1], i
-            );
-    
-            x = link[0];
-            y = link[1];
-            z = link[2];
-    
-            parentObject.add(linkGeo);
-            parentObject = linkGeo;
-            this.robotBones.push(linkGeo);
-        }
-    
+    };
+    step();
+}
 
-        this.robotGroup.updateMatrixWorld(true);
-    
-        // ✅ Restore target position AFTER applying rotation
-        this.target.position.copy(fixedTargetPosition);
-    }
-    createJointBone(x, y, z, w, h, d, min, max, jointNumber) {
-        // Thickening factor to avoid rendering issues
-        const thicken = 1;
-        const w_thickened = Math.abs(w) + thicken;
-        const h_thickened = Math.abs(h) + thicken;
-        const d_thickened = Math.abs(d) + thicken;
+export function planTransition(type, resolve) {
+    let movementVector = this.calculateMovementVector();
+    let localUp = this.target.normal.clone();  // Normal vector of the surface
 
-        // Create link
-        const material = new THREE.MeshLambertMaterial({ color: this.colors[jointNumber] });
-        const geometry = new THREE.BoxGeometry(w_thickened, h_thickened, d_thickened);
-        const mesh = new THREE.Mesh(geometry, material);
-        mesh.position.set(w / 2, h / 2, d / 2);
+    let perpendicular = new THREE.Vector3().crossVectors(movementVector, localUp).normalize();
 
-        const group = new THREE.Object3D();
-        group.position.set(x, y, z);
-        group.add(mesh);
+    if (type === "Concave") {
+        console.log("Performing Concave Transition...");
 
-        // Create joint
-        const jointGeo1 = new THREE.CylinderGeometry(0.8, 0.8, 1.6, 32, 32, false, -min, 2 * Math.PI - max + min);
-        const jointGeoMax = new THREE.CylinderGeometry(0.8, 0.8, 1.6, 32, 32, false, -max, max);
-        const jointGeoMin = new THREE.CylinderGeometry(0.8, 0.8, 1.6, 32, 32, false, 0, -min);
+        // Step 1: Rotate the moving leg to the new surface
+        this.rotateMovingLeg(Math.PI / 2, () => {
+            
+            // Step 2: Move the fixed leg onto the new surface
+            this.swapFixedLeg();
+            this.moveRobot(movementVector.clone().multiplyScalar(1), () => {
+                this.swapFixedLeg();  // Restore stepping
+                resolve();
+            });
+        });
 
-        var jointMaterial = new THREE.MeshBasicMaterial({ color: 0x000000 });
-        const jointMesh1 = new THREE.Mesh(jointGeo1, jointMaterial);
-        const jointMeshMax = new THREE.Mesh(jointGeoMax, jointMaterial);
-        const jointMeshMin = new THREE.Mesh(jointGeoMin, jointMaterial);
+    } else if (type === "Convex") {
+        console.log("Performing Convex Transition...");
 
-        const joint = new THREE.Group();
-        joint.add(jointMeshMax, jointMeshMin, jointMesh1);
-        this.joints.push(joint);
+        // Step 1: Move the moving leg over the edge
+        let transitionVector = localUp.clone().negate().multiplyScalar(STEP_SIZE);
+        this.moveRobot(transitionVector, () => {
 
-        // Set rotation axis based on joint number, this program was made for 5 joints robots where joint 0 and 4 turn around x other around z
-        if (jointNumber === 0 || jointNumber === 4) { 
-            joint.rotation.x = Math.PI / 2;
-        }
-        group.add(joint);
-        return group;
-    }
-
-    updateGeometry(newGeo, limits) {
-        let currentAngles = [...this.angles];
-
-        this.scene.remove(this.robotGroup);
-        this.robotBones = [];
-        this.joints = [];
-    
-        // Create a new robot group
-        this.robotGroup = new THREE.Group();
-        this.buildRobot(newGeo, limits);
-        this.scene.add(this.robotGroup);
-    
-        // Restore previous angles
-        for (let i = 0; i < currentAngles.length; i++) {
-            this.setAngle(i, currentAngles[i]);
-        }
-        this.joints[this.fixed_leg].children[0].material.color.set(0x0000ff);
-    }
-    
-    setAngles(angles1) {
-        this.angles = angles1;
-        this.robotBones[0].rotation.z = this.angles[0];
-        this.robotBones[1].rotation.y = this.angles[1];
-        this.robotBones[2].rotation.y = this.angles[2];
-        this.robotBones[3].rotation.y = this.angles[3];
-        this.robotBones[4].rotation.z = this.angles[4];
-    }
-    
-    setAngle(index, angle) {
-        this.angles[index] = angle;
-        this.setAngles(this.angles);
-    }
-    
-    setToTarget(px, py, pz, nx,ny,nz, transitionType = null) {
-        this.target.position.set(px, py, pz);
-        this.target.normal.set(nx,ny,nz);
-        console.log('target000', this.target);
-        this.transitionType = transitionType;
-        this.updateAnglesFromTarget();
-    }
-    
-    updateAnglesFromTarget() {
-        console.log("Updating angles...");
-        console.log('target', this.target);
-
-        // ✅ Step 1: Define the Normal and Movement Direction
-        let normal = this.origin.normal.clone().normalize();
-    
-        // ✅ Step 2: Project the Target onto the Plane Defined by `origin.normal`
-        let diff = this.target.position.clone().sub(this.origin.position);
-        let distanceToPlane = diff.dot(normal);
-        let projectedTarget = this.target.position.clone().sub(normal.clone().multiplyScalar(distanceToPlane));
-    
-        console.log("Projected Target on Plane:", projectedTarget);
-        // ✅ Step 3: Compute Rotation Angle θ0 (Yaw Rotation)
-        let crossProduct = new THREE.Vector3().crossVectors(this.direction, projectedTarget.clone().sub(this.origin.position).normalize()).dot(normal);
-        let dotProduct = this.direction.dot(projectedTarget.clone().sub(this.origin.position).normalize());
-        let theta0 = Math.atan2(crossProduct, dotProduct);
-
-        // ✅ Step 3: Compute Rotation Angle θ0 (Yaw Rotation)
-        let aAxis = projectedTarget.clone().sub(this.origin.position).normalize();
-        let bAxis = normal.clone();
-        console.log('target', this.target);
-
-   
-        this.setAngle(0, theta0);
-        console.log(`THETA )`,theta0)
-        console.log(`axis )`,aAxis)
-        console.log(`bxis )`,bAxis)
-        // ✅ Step 4: Convert Target Position to Local Coordinates (A-B Plane)
-        let targetPoint = new THREE.Vector2(
-            this.target.position.clone().sub(this.origin.position).dot(aAxis),
-            this.target.position.clone().sub(this.origin.position).dot(bAxis)
-        );
-        console.log('targetPoint',targetPoint)
-    
-        // ✅ Step 5: Compute End-Effector Angle
- 
-        console.log('target', this.target);
-
-        // ✅ Step 5: Compute End-Effector Angle (Corrected)
-        let normalA = this.origin.normal.clone().normalize();
-        let normalB = this.target.normal.clone().normalize();
-        console.log('target', this.target);
-
-        console.log("normalA",normalA)
-        console.log("normalB",normalB)
-
-        let crossAB = new THREE.Vector3().crossVectors(normalA, normalB);
-        
-        let angleEndEffector = Math.acos(normalA.dot(normalB));
-        console.log("this.transitionType",this.transitionType)
-        if(this.transitionType == 'Convex'){angleEndEffector *= -1;}
-         // Determine concave (+) or convex (-) rotation
-        if (crossAB.dot(this.direction) < 0) angleEndEffector *= -1;
-        
-        console.log(`End Effector Angle: ${angleEndEffector * 180 / Math.PI}°`);
-    
-     
-        // ✅ Step 6: Solve IK for the 3R Leg
-        let angles = this.ik3R(targetPoint.y, targetPoint.x, this.offset, this.leg1, this.leg2, this.offset, angleEndEffector + Math.PI);
-    
-        console.log("Computed Joint Angles:", angles);
-    
-        // ✅ Step 7: Apply the Computed Angles
-        this.setAngle(1, angles.theta1);
-        this.setAngle(2, angles.theta2);
-        this.setAngle(3, angles.theta3);
-        this.transitionType = 'None';
-
-        this.robotGroup.updateMatrixWorld(true);
-
-        console.log("New End-Effector Position:", this.robotBones[4].getWorldPosition());
-    }
-
-    ik3R(x, y, L0, L1, L2, L3, psi) {
-        // Step 1: Compute the intermediate target position (x2, y2) without L3
-        let x2 = x - L3 * Math.sin(psi);
-        let y2 = y - L3 * Math.cos(psi) - L0;
-    
-        // Step 2: Compute distance from origin to (x2, y2)
-        let dSquared = x2 ** 2 + y2 ** 2;
-    
-        // Step 3: Solve for theta2 using the Law of Cosines
-        let cosTheta2 = (dSquared - L1 ** 2 - L2 ** 2) / (2 * L1 * L2);
-        
-        // Ensure cosTheta2 is within valid range for acos to avoid NaN errors
-        cosTheta2 = Math.min(1, Math.max(-1, cosTheta2));
-    
-        let theta2 = Math.acos(cosTheta2);
-    
-        // Step 4: Solve for theta1
-        let theta1 = Math.atan2(y2, x2) - Math.atan2(L2 * Math.sin(theta2), L1 + L2 * Math.cos(theta2));    
-    
-        // Step 5: Compute theta3
-        let theta3 = psi - (theta1 + theta2);
-    
-        // Return the computed joint angles in radians
-        return { theta1, theta2, theta3 };
-    }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    swapFixedLeg() {
-        let oldBasePosition = new THREE.Vector3();
-        let oldEndPosition = new THREE.Vector3();
-    
-        this.robotBones[0].getWorldPosition(oldBasePosition);
-        this.robotBones[this.robotBones.length - 1].getWorldPosition(oldEndPosition);
-    
-        const shift = new THREE.Vector3().subVectors(oldEndPosition, oldBasePosition);
-        this.robotGroup.position.add(shift);
-        this.robotGroup.updateMatrixWorld(true);
-    
-        let temp = { ...this.origin };
-        this.origin = {
-            position: this.target.position.clone().round(),
-            normal: this.target.normal.clone()
-        };
-    
-        this.target = {
-            position: temp.position.clone().round(),
-            normal: temp.normal.clone()
-        };
-    
-        this.joints[this.fixed_leg].children[0].material.color.set(0x000000);
-        this.fixed_leg = this.fixed_leg === 0 ? 4 : 0;
-        this.joints[0].children[0].material.color.set(0x0000ff);
-    
-        this.updateAnglesFromTarget();
-    }
-
-    computeEndEffectorPosition() {
-        const lastBone = this.robotBones[this.robotBones.length - 1];
-        lastBone.updateMatrixWorld(true);
-        return lastBone.getWorldPosition(new THREE.Vector3());
-    }
-
-    enqueueAction(action) {
-        this.actionQueue.push(action);
-        if (!this.isExecuting) {
-            this.processNextAction();
-        }
-    }
-
-    async processNextAction() {
-        if (this.actionQueue.length === 0) {
-            this.isExecuting = false;
-            return;
-        }
-        this.isExecuting = true;
-        
-        let action = this.actionQueue.shift();
-        console.log(`Executing: ${action}`);
-
-        await this.executeAction(action);
-        
-        this.processNextAction();
-    }
-
-    async executeAction(action) {
-        return new Promise((resolve) => {
-            console.log(`Executing: ${action}`);
-    
-            if (action === "goForward") this.goForward(resolve);
-            else if (action === "goBackward") this.goBackward(resolve);
-            else if (action === "turnRight") this.turnRight(resolve);
-            else if (action === "turnLeft") this.turnLeft(resolve);
-            else if (action === "planTransitionConcave") this.planTransitionConcave(resolve);
-            else if (action === "planTransitionConvex") this.planTransitionConvex(resolve);
-            else resolve(); 
+            // Step 2: Move the fixed leg onto the new surface after the first leg lands
+            this.swapFixedLeg();
+            this.moveRobot(movementVector.clone().multiplyScalar(1), () => {
+                resolve();
+            });
         });
     }
 }
 
-// Attach movement functions dynamically
-THREERobot.prototype.goForward = goForward;
-THREERobot.prototype.goBackward = goBackward;
-THREERobot.prototype.turnRight = turnRight;
-THREERobot.prototype.turnLeft = turnLeft;
-THREERobot.prototype.planTransitionConcave = planTransitionConcave;
-THREERobot.prototype.planTransitionConvex = planTransitionConvex;
-THREERobot.prototype.planTransition = planTransition;
-THREERobot.prototype.moveRobot = moveRobot;
-THREERobot.prototype.calculateMovementVector = calculateMovementVector;
-THREERobot.prototype.calculateRotationVector = calculateRotationVector;
-THREERobot.prototype.displayTrajectory = displayTrajectory;
-THREERobot.prototype.clearTrajectory = clearTrajectory;
-THREERobot.prototype.rotateMovingLeg = rotateMovingLeg;
- 
-// The planTransition function will handle the transition between two adjacent surfaces by adjusting the robot’s legs to match the new surface orientation. There are two cases:
-// 	1.	Concave Transition:
-// 	•	The robot transitions from a surface to another at a 90-degree inward angle.
-// 	•	It moves the moving leg first, performing a 90-degree rotation around the vector perpendicular to the two surface normals.
-// 	•	The leg is placed two step sizes away on the new surface.
-// 	•	The fixed leg is then moved one step size to follow.
-// 	2.	Convex Transition:
-// 	•	The robot transitions from a surface to another at a 90-degree outward angle.
-// 	•	It moves in the direction of the normal to the current surface.
-// 	•	The movement is performed around the intersection vector of the current and target surface normals.
-// 	•	The leg follows a parabolic path, lifting the robot over the edge smoothly.
-// 	•	The fixed leg follows after the moving leg reaches the new surface.
- 
+export function calculateMovementVector() {
+    let movementVector = new THREE.Vector3().subVectors(this.target.position, this.origin.position).normalize();
+    movementVector.normalize();
+    return movementVector;
+}
+
+export function calculateRotationVector(angleOffset) {
+    let legVector = this.calculateMovementVector();
+    return new THREE.Vector3(
+        legVector.x * Math.cos(angleOffset) - legVector.y * Math.sin(angleOffset),
+        legVector.x * Math.sin(angleOffset) + legVector.y * Math.cos(angleOffset),
+        legVector.z
+    );
+}
+
+
+// ======================== HELPER FUNCTION ========================
+
+function cubicBezier(p0, p1, p2, p3, t) {
+    let pA = p0.clone().lerp(p1, t);
+    let pB = p1.clone().lerp(p2, t);
+    let pC = p2.clone().lerp(p3, t);
+    let pD = pA.clone().lerp(pB, t);
+    let pE = pB.clone().lerp(pC, t);
+    return pD.clone().lerp(pE, t);
+}
+
+// export function computeLocalUp() {
+//     let origin = this.origin.clone();
+//     let target = this.target.clone();
+
+//     this.robotGroup.updateMatrixWorld(true);
+
+//     let j2 = new THREE.Vector3;
+//     this.robotBones[2].getWorldPosition(j2);
+
+//     let direction = target.clone().sub(origin).normalize();
+
+//     let toJ2 = j2.clone().sub(origin);
+//     let projectionLength = toJ2.dot(direction);
+//     let projectionPoint = origin.clone().add(direction.clone().multiplyScalar(projectionLength));
+
+//     let localUp = j2.clone().sub(projectionPoint);
+
+//     localUp.x = Math.round(localUp.x);     
+//     localUp.y = Math.round(localUp.y);     
+//     localUp.z = Math.round(localUp.z);
+
+//     localUp.normalize();
+    
+//     if (localUp.lengthSq() === 0) {
+//         console.warn("⚠️ Local up vector is zero! Using default up direction.");
+//         return new THREE.Vector3(0, 0, 1); // Default fallback
+//     }
+//     return localUp; 
+// }
+
+// ===================== VISUALIZATION FUNCTION =====================
+
+
+export function displayTrajectory() {
+    if (!this.showTrajectory) return; 
+
+    // console.log("Displaying movement trajectory...");
+    
+    let markerGeometry = new THREE.SphereGeometry(0.1, 10, 10);
+    let markerMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000 });
+
+    let marker = new THREE.Mesh(markerGeometry, markerMaterial);
+    marker.position.copy(this.target);
+    this.scene.add(marker);
+    this.trajectoryPoints.push(marker);  
+
+    // console.log("Trajectory point added at:", this.target);
+}
+
+export function clearTrajectory() {
+    // console.log("Clearing all trajectory points...");
+    this.trajectoryPoints.forEach(point => this.scene.remove(point));
+    this.trajectoryPoints = [];
+}

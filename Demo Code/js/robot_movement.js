@@ -1,11 +1,9 @@
 const STEP_SIZE = 3.0;  // Global step size
-const INTERMEDIARY_STEPS = 20;
+const INTERMEDIARY_STEPS = 50;
 const DELAY = 10;
 
-
 export function goForward(resolve) {
-    console.log("Moving forward...");       // Swap before moving
-
+    console.log("Moving forward...");      
     let movementVector = this.calculateMovementVector();
     let newNormal = this.target.normal.clone(); 
     this.moveRobot(movementVector, newNormal, () => {
@@ -15,7 +13,7 @@ export function goForward(resolve) {
 
 export function goBackward(resolve) {
     console.log("Moving backward...");
-    this.swapFixedLeg();        // Swap before moving
+    this.swapFixedLeg();    
 
     let movementVector = this.calculateMovementVector();
     let newNormal = this.target.normal.clone(); 
@@ -44,104 +42,30 @@ export function halfturn(resolve) {
     this.rotateMovingLeg(rotationAxis, Math.PI, resolve);
 }
 
- 
-export function planTransitionConvex(resolve) {
-    let startMovingLeg = this.target.position.clone();
-
-    let movementVector = this.calculateMovementVector();
-    let currentNormal = this.origin.normal.clone();
-
-    // Step 1: Move to intermediary position
-    // Compute step distances
-    let step1 = movementVector.clone().multiplyScalar(0.5 * STEP_SIZE);    // Move forward
-    let step2 = currentNormal.clone().multiplyScalar(1.5 * STEP_SIZE); // Move onto the new surface
-
-    // Compute perpendicular transition axis (rotation axis)
-    let rotationAxis = new THREE.Vector3().crossVectors(movementVector, currentNormal).normalize();
-    let quaternion = new THREE.Quaternion().setFromAxisAngle(rotationAxis, -Math.PI / 2);
-    let newNormal = currentNormal.clone().applyQuaternion(quaternion).normalize();
-
-    // ✅ Step 1: Move to intermediary position (before transitioning fully)
-    let intermediaryPosition = startMovingLeg.clone().add(step1).sub(step2);
-
-    this.setToTarget(intermediaryPosition.x, intermediaryPosition.y, intermediaryPosition.z, 
-                     newNormal.x, newNormal.y, newNormal.z, 'Convex');
-    console.log("intermediaryPosition",intermediaryPosition)
-    console.log(" EN POS AFTER SET TO TARGEdddddddT ",this.robotBones[4].getWorldPosition())
-
-    setTimeout(() => {
-        // Step 2: Swap fixed leg
-        this.swapFixedLeg();
-
-        setTimeout(() => {
-            let startMovingLeg = this.target.position.clone();
-
-            let step3 = movementVector.clone().multiplyScalar(1.5 * STEP_SIZE);    // Move forward
-            let step4 = currentNormal.clone().multiplyScalar(0.5 * STEP_SIZE); // Move onto the new surface
-            let intermediaryPosition2 = startMovingLeg.clone().add(step3).sub(step4);
-
-            this.setToTarget(intermediaryPosition2.x, intermediaryPosition2.y, intermediaryPosition2.z, 
-                newNormal.x, newNormal.y, newNormal.z, 'Convexswap');
-
-            // Step 3: Move to final position
-            this.swapFixedLeg();
-
-            if (resolve) resolve(); // ✅ Ensure resolve is called after the full transition
-        }, 3000);
-
-    }, 3000);
-}
-
-export function planTransitionConcave(resolve) {
-    let startMovingLeg = this.target.position.clone();
-
-    let movementVector = this.calculateMovementVector();
-    let currentNormal = this.origin.normal.clone();
-
-    // Step 1: Move to intermediary position
-    // Compute step distances
-    let step1 = movementVector.clone().multiplyScalar(0.5 * STEP_SIZE);    // Move forward
-    let step2 = currentNormal.clone().multiplyScalar(1.5 * STEP_SIZE); // Move onto the new surface
-
-    // Compute perpendicular transition axis (rotation axis)
-    let rotationAxis = new THREE.Vector3().crossVectors(movementVector, currentNormal).normalize();
-    let quaternion = new THREE.Quaternion().setFromAxisAngle(rotationAxis, Math.PI / 2);
-    let newNormal = currentNormal.clone().applyQuaternion(quaternion).normalize();
-
-    // ✅ Step 1: Move to intermediary position (before transitioning fully)
-    let intermediaryPosition = startMovingLeg.clone().add(step1).add(step2);
-    // console.log("intermediaryPosition",intermediaryPosition)
-
-    this.setToTarget(intermediaryPosition.x, intermediaryPosition.y, intermediaryPosition.z, 
-                     newNormal.x, newNormal.y, newNormal.z, 'Concave');
-    setTimeout(() => {
-        // Step 2: Swap fixed leg
-        this.swapFixedLeg();
-
-        setTimeout(() => {
-            let startMovingLeg = this.target.position.clone();
-
-            let step3 = movementVector.clone().multiplyScalar(1.5 * STEP_SIZE);    // Move forward
-            let step4 = currentNormal.clone().multiplyScalar(0.5 * STEP_SIZE); // Move onto the new surface
-            let intermediaryPosition2 = startMovingLeg.clone().add(step3).add(step4);
-
-            this.setToTarget(intermediaryPosition2.x, intermediaryPosition2.y, intermediaryPosition2.z, 
-                newNormal.x, newNormal.y, newNormal.z, 'Concave');
-
-            // Step 3: Move to final position
-            this.swapFixedLeg();
-
-            if (resolve) resolve(); // ✅ Ensure resolve is called after the full transition
-        }, 1000);
-
-    }, 1000);
-}
 
 // export function planTransitionConvex(resolve) {
 //     let startMovingLeg = this.target.position.clone();
 
+//     let movementVector = this.calculateMovementVector();
+//     let currentNormal = this.origin.normal.clone();
+
 //     // Step 1: Move to intermediary position
-//     this.setToTarget(startMovingLeg.x + STEP_SIZE, startMovingLeg.y, startMovingLeg.z - 2 * STEP_SIZE, 1, 0, 0, 'Convex');
+//     // Compute step distances
+//     let step1 = movementVector.clone().multiplyScalar(0.5 * STEP_SIZE);    // Move forward
+//     let step2 = currentNormal.clone().multiplyScalar(1.5 * STEP_SIZE); // Move onto the new surface
+
+//     // Compute perpendicular transition axis (rotation axis)
+//     let rotationAxis = new THREE.Vector3().crossVectors(movementVector, currentNormal).normalize();
+//     let quaternion = new THREE.Quaternion().setFromAxisAngle(rotationAxis, -Math.PI / 2);
+//     let newNormal = currentNormal.clone().applyQuaternion(quaternion).normalize();
+
+//     // ✅ Step 1: Move to intermediary position (before transitioning fully)
+//     let intermediaryPosition = startMovingLeg.clone().add(step1).sub(step2);
+
+//     this.setToTarget(intermediaryPosition.x, intermediaryPosition.y, intermediaryPosition.z, 
+//                      newNormal.x, newNormal.y, newNormal.z, 'Convex');
+//     console.log("intermediaryPosition",intermediaryPosition)
+//     console.log(" EN POS AFTER SET TO TARGEdddddddT ",this.robotBones[4].getWorldPosition())
 
 //     setTimeout(() => {
 //         // Step 2: Swap fixed leg
@@ -150,15 +74,122 @@ export function planTransitionConcave(resolve) {
 //         setTimeout(() => {
 //             let startMovingLeg = this.target.position.clone();
 
+//             let step3 = movementVector.clone().multiplyScalar(1.5 * STEP_SIZE);    // Move forward
+//             let step4 = currentNormal.clone().multiplyScalar(0.5 * STEP_SIZE); // Move onto the new surface
+//             let intermediaryPosition2 = startMovingLeg.clone().add(step3).sub(step4);
+
+//             this.setToTarget(intermediaryPosition2.x, intermediaryPosition2.y, intermediaryPosition2.z, 
+//                 newNormal.x, newNormal.y, newNormal.z, 'Convexswap');
+
 //             // Step 3: Move to final position
-//             this.setToTarget(startMovingLeg.x + STEP_SIZE, startMovingLeg.y , startMovingLeg.z - STEP_SIZE, 1, 0, 0, 'Convex');
 //             this.swapFixedLeg();
 
 //             if (resolve) resolve(); // ✅ Ensure resolve is called after the full transition
-//         }, 10000);
+//         }, 3000);
 
-//     }, 10000);
+//     }, 3000);
 // }
+export function planTransitionConvex(resolve) {
+    let startMovingLeg = this.target.position.clone();
+    let startMovingLeg2 = this.origin.position.clone();
+    console.log('startMovingLeg',startMovingLeg);
+    let movementVector = this.calculateMovementVector();
+    let currentNormal = this.origin.normal.clone(); 
+
+    // ✅ Compute step distances
+    let step1 = movementVector.clone().multiplyScalar(0.5 * STEP_SIZE); // Move forward
+    let step2 = currentNormal.clone().multiplyScalar(1.5 * STEP_SIZE);  // Move up onto new surface
+    
+    // ✅ Compute new normal (90° rotation)
+    let rotationAxis = new THREE.Vector3().crossVectors(movementVector, currentNormal).normalize();
+    let newNormal = currentNormal.clone().applyAxisAngle(rotationAxis, -Math.PI / 2).normalize();
+
+    // ✅ Define target positions for all movement phases
+    let firstLegPosition = startMovingLeg.clone().add(step1).sub(step2);   // First leg moves onto the wall
+    console.log('startMovingLeg',startMovingLeg);
+    console.log('firstLegPosition',firstLegPosition);
+    console.log('currentNormal',currentNormal);
+    console.log('newNormal',newNormal);
+
+    // ✅ Step 1: Move first leg to intermediary position (pre-transition)
+    this.interpolateMovement(startMovingLeg, firstLegPosition, currentNormal, newNormal, 'Convex',() => {
+        let startMovingLeg = this.target.position.clone();
+
+        console.log('startMovingLeg',startMovingLeg);
+        console.log('REQL POS',this.robotBones[4].getWorldPosition())
+
+        this.swapFixedLeg(); // ✅ Step 2: Swap fixed leg after first move
+        let step3 = movementVector.clone().multiplyScalar(1.5 * STEP_SIZE); // Move second leg forward
+        let step4 = currentNormal.clone().multiplyScalar(0.5 * STEP_SIZE);  // Adjust second leg
+
+        let secondLegPosition = startMovingLeg2.clone().add(step3).sub(step4); // Second leg moves onto the wall
+
+        // ✅ Step 3: Move second leg to intermediary position
+        this.interpolateMovement(startMovingLeg2, secondLegPosition, currentNormal, newNormal,'ConvexSwap', () => {
+            this.swapFixedLeg(); // ✅ Step 4: Swap fixed leg after final move
+            if (resolve) resolve();
+        });
+    });
+}
+
+export function planTransitionConcave(resolve) {
+    let startMovingLeg = this.target.position.clone();
+    let startMovingLeg2 = this.origin.position.clone();
+
+    let movementVector = this.calculateMovementVector();
+    let currentNormal = this.origin.normal.clone(); 
+
+    // ✅ Compute step distances
+    let step1 = movementVector.clone().multiplyScalar(0.5 * STEP_SIZE); // Move forward
+    let step2 = currentNormal.clone().multiplyScalar(1.5 * STEP_SIZE);  // Move up onto new surface
+    
+    // ✅ Compute new normal (90° rotation)
+    let rotationAxis = new THREE.Vector3().crossVectors(movementVector, currentNormal).normalize();
+    let newNormal = currentNormal.clone().applyAxisAngle(rotationAxis, Math.PI / 2).normalize();
+
+    // ✅ Define target positions for all movement phases
+    let firstLegPosition = startMovingLeg.clone().add(step1).add(step2);   // First leg moves onto the wall
+
+    // ✅ Step 1: Move first leg to intermediary position (pre-transition)
+    this.interpolateMovement(startMovingLeg, firstLegPosition, currentNormal, newNormal, 'Concave',() => {
+        this.swapFixedLeg(); // ✅ Step 2: Swap fixed leg after first move
+        let step3 = movementVector.clone().multiplyScalar(1.5 * STEP_SIZE); // Move second leg forward
+        let step4 = currentNormal.clone().multiplyScalar(0.5 * STEP_SIZE);  // Adjust second leg
+
+        let secondLegPosition = startMovingLeg2.clone().add(step3).add(step4); // Second leg moves onto the wall
+
+        // ✅ Step 3: Move second leg to intermediary position
+        this.interpolateMovement(startMovingLeg2, secondLegPosition, currentNormal, newNormal,'ConcaveSwap', () => {
+            this.swapFixedLeg(); // ✅ Step 4: Swap fixed leg after final move
+            if (resolve) resolve();
+        });
+    });
+}
+
+export function interpolateMovement(startPos, endPos, startNormal, endNormal, transitionType, callback) {
+    let stepIndex = 0;
+
+    const step = () => {
+        if (stepIndex <= INTERMEDIARY_STEPS) {
+            let t = stepIndex / INTERMEDIARY_STEPS;
+            console.log('REQL POS',this.robotBones[4].getWorldPosition())
+            // ✅ Interpolate position
+            let interpolatedPos = startPos.clone().lerp(endPos, t);
+            console.log(`interpolatedPos`,interpolatedPos)
+            // ✅ Interpolate normal (smooth transition)
+            let interpolatedNormal = startNormal.clone().lerp(endNormal, t).normalize();
+
+            this.setToTarget(interpolatedPos.x, interpolatedPos.y, interpolatedPos.z, 
+                             interpolatedNormal.x, interpolatedNormal.y, interpolatedNormal.z, transitionType);
+
+            stepIndex++;
+            setTimeout(step, DELAY);
+        } else {
+            if (callback) callback();
+        }
+    };
+    step();
+}
 
 export function moveRobot(movementVector, newNormal, resolve = () => {}) {  // Ensure resolve is always defined
     if (this.legMoved === undefined) this.legMoved = false;
@@ -236,56 +267,12 @@ export function rotateMovingLeg(rotationAxis, angleOffset, resolve = () => {}) {
     step();
 }
 
-export function planTransition(type, resolve) {
-    let movementVector = this.calculateMovementVector();
-    let localUp = this.target.normal.clone();  // Normal vector of the surface
-
-    let perpendicular = new THREE.Vector3().crossVectors(movementVector, localUp).normalize();
-
-    if (type === "Concave") {
-        console.log("Performing Concave Transition...");
-
-        // Step 1: Rotate the moving leg to the new surface
-        this.rotateMovingLeg(Math.PI / 2, () => {
-            
-            // Step 2: Move the fixed leg onto the new surface
-            this.swapFixedLeg();
-            this.moveRobot(movementVector.clone().multiplyScalar(1), () => {
-                this.swapFixedLeg();  // Restore stepping
-                resolve();
-            });
-        });
-
-    } else if (type === "Convex") {
-        console.log("Performing Convex Transition...");
-
-        // Step 1: Move the moving leg over the edge
-        let transitionVector = localUp.clone().negate().multiplyScalar(STEP_SIZE);
-        this.moveRobot(transitionVector, () => {
-
-            // Step 2: Move the fixed leg onto the new surface after the first leg lands
-            this.swapFixedLeg();
-            this.moveRobot(movementVector.clone().multiplyScalar(1), () => {
-                resolve();
-            });
-        });
-    }
-}
-
 export function calculateMovementVector() {
     let movementVector = new THREE.Vector3().subVectors(this.target.position, this.origin.position).normalize();
     movementVector.normalize();
     return movementVector;
 }
 
-export function calculateRotationVector(angleOffset) {
-    let legVector = this.calculateMovementVector();
-    return new THREE.Vector3(
-        legVector.x * Math.cos(angleOffset) - legVector.y * Math.sin(angleOffset),
-        legVector.x * Math.sin(angleOffset) + legVector.y * Math.cos(angleOffset),
-        legVector.z
-    );
-}
 
 
 // ======================== HELPER FUNCTION ========================
@@ -298,36 +285,6 @@ function cubicBezier(p0, p1, p2, p3, t) {
     let pE = pB.clone().lerp(pC, t);
     return pD.clone().lerp(pE, t);
 }
-
-// export function computeLocalUp() {
-//     let origin = this.origin.clone();
-//     let target = this.target.clone();
-
-//     this.robotGroup.updateMatrixWorld(true);
-
-//     let j2 = new THREE.Vector3;
-//     this.robotBones[2].getWorldPosition(j2);
-
-//     let direction = target.clone().sub(origin).normalize();
-
-//     let toJ2 = j2.clone().sub(origin);
-//     let projectionLength = toJ2.dot(direction);
-//     let projectionPoint = origin.clone().add(direction.clone().multiplyScalar(projectionLength));
-
-//     let localUp = j2.clone().sub(projectionPoint);
-
-//     localUp.x = Math.round(localUp.x);     
-//     localUp.y = Math.round(localUp.y);     
-//     localUp.z = Math.round(localUp.z);
-
-//     localUp.normalize();
-    
-//     if (localUp.lengthSq() === 0) {
-//         console.warn("⚠️ Local up vector is zero! Using default up direction.");
-//         return new THREE.Vector3(0, 0, 1); // Default fallback
-//     }
-//     return localUp; 
-// }
 
 // ===================== VISUALIZATION FUNCTION =====================
 
