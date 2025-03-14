@@ -1,4 +1,6 @@
-// ===================================== SCENE ======================================
+import * as THREE from "../three/build/three.module.min.js";
+import { OrbitControls } from "../three/examples/jsm/controls/OrbitControls.js";
+
 var container, scene, camera, renderer;
 export{scene, camera, renderer};
 
@@ -6,10 +8,10 @@ export function initScene() {
 	container = document.getElementById( 'webgl' );
 
 	renderer = new THREE.WebGLRenderer({
-		antialias: true, // to get smoother output
-		preserveDrawingBuffer: false, // no screenshot -> faster?
+		antialias: true, 				// to get smoother output
+		preserveDrawingBuffer: false, 	// no screenshot -> faster?
 	  });
-	renderer.setClearColor(0x444444);
+	renderer.setClearColor(0x99bbcc);
 
 	renderer.setSize(window.innerWidth, window.innerHeight)
 	container.appendChild( renderer.domElement );
@@ -18,17 +20,16 @@ export function initScene() {
 
 	camera = new THREE.PerspectiveCamera(35, window.innerWidth / window.innerHeight, 1, 10000)
 	camera.up.set(0, 0, 1);
-  	camera.position.set(25, 25, 25);
+  	camera.position.set(15, 15, 10);
   	scene.add(camera);
 
-	// lights
-	var light = new THREE.AmbientLight(0xaaaaaa);
+	var light = new THREE.AmbientLight(0xfaaafa);
 	scene.add(light);
 	var light2 = new THREE.DirectionalLight(0xaaaaaa);
 	light2.position.set(1, 1.3, 1).normalize();
 	scene.add(light2);
   
-	var cameraControls = new THREE.OrbitControls(camera, renderer.domElement);
+	var cameraControls = new OrbitControls(camera, renderer.domElement);
 	cameraControls.addEventListener('change', () => renderer.render(scene, camera));
   
 	function onWindowResize() 
@@ -43,13 +44,13 @@ export function initScene() {
 	window.addEventListener('resize', onWindowResize, false);
 
 	var size = 15;
-	var step = 30;
+	var step = 15;
 
 	var gridHelper = new THREE.GridHelper(size, step);
 	gridHelper.rotation.x = Math.PI / 2;
 	scene.add(gridHelper);
 
-	var axisHelper = new THREE.AxisHelper(5);
+	var axisHelper = new THREE.AxesHelper(5);
 	var colors = axisHelper.geometry.attributes.color.array;
 
 	colors.set( [

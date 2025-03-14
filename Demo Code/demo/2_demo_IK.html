@@ -1,55 +1,56 @@
-<!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-	<title>Three.js</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title> Demo 2: Inverse Kinematic and Fixed Leg</title>
+    <style>
+        html, body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+        }
+    </style>
 </head>
 <body>
-	<style>
-		html, body {
-			margin: 0;
-			padding: 0;
-			overflow: hidden;
-		}
-	</style>
 
-	<div id="webgl"></div>
+    <div id="webgl"></div>
 
-	<div id="title" style="
-	position: absolute;
-	top: 10px;
-	left: 10px;
-	font-size: 20px;
-	font-weight: bold;
-	color: white;
-	font-family: Arial, sans-serif;
-	background: rgba(0, 0, 0, 0.5);
-	padding: 5px 10px;
-	border-radius: 5px;
-	">Demo 2: Inverse Kinematic and Fixed Leg</div>
+    <div id="title" style="
+        position: absolute;
+        top: 10px;
+        left: 10px;
+        font-size: 20px;
+        font-weight: bold;
+        color: white;
+        font-family: Arial, sans-serif;
+        background: rgba(0, 0, 0, 0.5);
+        padding: 5px 10px;
+        border-radius: 5px;">
+		Demo 2: Inverse Kinematic and Fixed Leg
+	</div>
 
-
-	<script src="../lib/three.js"></script>
-	<script src="../lib/OrbitControls.js"></script>
-	<script src="../lib/OBJLoader.js"></script>
-	<script src="../lib/dat.gui.min.js"></script>
-	<script src="../lib/GPUComputationRenderer.js"></script>
-
-
-	<script type="module">
-		import { initScene, scene } from "../js/scene.js";
-		import { setupGUI} from "../js/GUI/gui_demo2.js"; 
-		import { THREERobot } from "../js/robot.js";
-
-
+    <script type="module">
+        import * as THREE from "../three/build/three.module.min.js";
+        import { STLLoader } from "../three/examples/jsm/loaders/STLLoader.js";
+        import { OBJLoader } from '../three/examples/jsm/loaders/OBJLoader.js';
+        import { GUI } from "../three/examples/jsm/libs/lil-gui.module.min.js";
+        import { OrbitControls } from "../three/examples/jsm/controls/OrbitControls.js";
+        import { GPUComputationRenderer } from '../three/examples/jsm/misc/GPUComputationRenderer.js';
+    
+        import { initScene, scene } from "../js/scene.js";
+        import { setupGUI } from "../js/GUI/gui_demo2.js"; 
+		import { THREERobot } from "../js/robot.js"; 
+    
 		// First initialize the scene with the camera angle, the light, the background color and the grid
 		initScene();
 
 		// clearly set origin and target explicitly
-		const origin = new THREE.Vector3(0,0,0);
-		const target = new THREE.Vector3(-4, 3, 4);  // clearly end position explicitly set 
+		const originPos = new THREE.Vector3(0,0,0);
+		const targetPos = new THREE.Vector3(-1, 1, 0); 
+		const normal = new THREE.Vector3(0, 0, 1);		
 
 		let VisualRobot = new THREERobot(
-			[ [0,0,2], [0,0,5], [0,0,5], [0,0,2], [0,0,0] ],
+			[ [0,0,1.25], [0,0,2], [0,0,2], [0,0,1.25], [0,0,0] ],
 			[
 			[-2*Math.PI, 2*Math.PI],
 			[2*Math.PI, 2*Math.PI],
@@ -57,8 +58,9 @@
 			[2*Math.PI, 2*Math.PI],
 			[2*Math.PI, 2*Math.PI]
 			],
-			origin,
-			target,
+			originPos,
+			targetPos,
+			normal,
 			scene
 		);
 		// Finally setup and update the GIU

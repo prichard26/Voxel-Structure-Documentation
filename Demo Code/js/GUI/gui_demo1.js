@@ -1,9 +1,11 @@
+import { GUI } from "../../three/examples/jsm/libs/lil-gui.module.min.js";
+
+
 var guiControls,  jointsParams = [], geometryParams = [], end;
 export var guiControls;
 
 var DEG_TO_RAD = Math.PI / 180;
 var RAD_TO_DEG = 180 / Math.PI;
-
 
 export function setupGUI(robotInstance) {
     /*
@@ -11,19 +13,19 @@ export function setupGUI(robotInstance) {
     */
     guiControls = new function() {  
         // Initialize joint angles from the robot instance
-        this.j1 = robotInstance.angles[0] * RAD_TO_DEG;
-        this.j2 = robotInstance.angles[1] * RAD_TO_DEG;
-        this.j3 = robotInstance.angles[2] * RAD_TO_DEG;
-        this.j4 = robotInstance.angles[3] * RAD_TO_DEG;
-        this.j5 = robotInstance.angles[4] * RAD_TO_DEG;
+        this.j1 = parseFloat((robotInstance.angles[0] * RAD_TO_DEG).toFixed(1));
+        this.j2 = parseFloat((robotInstance.angles[1] * RAD_TO_DEG).toFixed(1));
+        this.j3 = parseFloat((robotInstance.angles[2] * RAD_TO_DEG).toFixed(1));
+        this.j4 = parseFloat((robotInstance.angles[3] * RAD_TO_DEG).toFixed(1));
+        this.j5 = parseFloat((robotInstance.angles[4] * RAD_TO_DEG).toFixed(1));
 
         // Read dimensions from robot geometry
-        this.leg1 = robotInstance.robotBones[2].position.z; 
-        this.leg2 = robotInstance.robotBones[3].position.z;
-        this.offset = robotInstance.robotBones[4].position.z; 
+        this.leg1 = parseFloat((robotInstance.robotBones[2].position.z).toFixed(2)); 
+        this.leg2 = parseFloat((robotInstance.robotBones[3].position.z).toFixed(2));
+        this.offset = parseFloat((robotInstance.robotBones[4].position.z).toFixed(2)); 
     };
 
-    var gui = new dat.GUI();
+    var gui = new GUI();
 
     // ========== Robot Geometry Control ==========
     var geometryGui = gui.addFolder('Robot Geometry');
@@ -33,11 +35,11 @@ export function setupGUI(robotInstance) {
 
     // ========== Robot Joint Control ==========
     let jointsGui = gui.addFolder('Robot Angles');
-    jointsParams.push(jointsGui.add(guiControls, 'j1', -180, 180).step(1).listen().onChange(() => robotInstance.setAngle(0, guiControls.j1 * DEG_TO_RAD)));
-    jointsParams.push(jointsGui.add(guiControls, 'j2', -180, 180).step(1).listen().onChange(() => robotInstance.setAngle(1, guiControls.j2 * DEG_TO_RAD)));
-    jointsParams.push(jointsGui.add(guiControls, 'j3', -180, 180).step(1).listen().onChange(() => robotInstance.setAngle(2, guiControls.j3 * DEG_TO_RAD)));
-    jointsParams.push(jointsGui.add(guiControls, 'j4', -180, 180).step(1).listen().onChange(() => robotInstance.setAngle(3, guiControls.j4 * DEG_TO_RAD)));
-    jointsParams.push(jointsGui.add(guiControls, 'j5', -180, 180).step(1).listen().onChange(() => robotInstance.setAngle(4, guiControls.j5 * DEG_TO_RAD)));
+    jointsParams.push(jointsGui.add(guiControls, 'j1', -135, 135).step(1).listen().onChange(() => robotInstance.setAngle(0, guiControls.j1 * DEG_TO_RAD)));
+    jointsParams.push(jointsGui.add(guiControls, 'j2', -135, 135).step(1).listen().onChange(() => robotInstance.setAngle(1, guiControls.j2 * DEG_TO_RAD)));
+    jointsParams.push(jointsGui.add(guiControls, 'j3', -135, 135).step(1).listen().onChange(() => robotInstance.setAngle(2, guiControls.j3 * DEG_TO_RAD)));
+    jointsParams.push(jointsGui.add(guiControls, 'j4', -135, 135).step(1).listen().onChange(() => robotInstance.setAngle(3, guiControls.j4 * DEG_TO_RAD)));
+    jointsParams.push(jointsGui.add(guiControls, 'j5', -135, 135).step(1).listen().onChange(() => robotInstance.setAngle(4, guiControls.j5 * DEG_TO_RAD)));
 }
 
 export function updateGUI(robotInstance) {

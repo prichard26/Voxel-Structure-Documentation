@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Step-by-Step Construction | Recursive Robotic Swarms</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+
+<body>
+
+    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+        <div class="container">
+            <a class="navbar-brand" href="../index.html">Recursive Robotic Swarms</a>
+        </div>
+    </nav>
+
+    <section class="container mt-5">
+        <h2>Simulation Structure</h2>
+        <p class="text-justify">
+            This section explains how the simulation is structured, covering key components such as the inverse
+            kinematics of a simple Bill-E robot, all the way up to a multi-robot autonomous structure assembly.
+            To fully understand the different parts of the simulation, we will progress from an empty Three.js scene to
+            a fully autonomous simulation.
+        </p>
+        <h4 class="mt-4">🔍 Simulation Workflow: From High to Low Level</h4>
+
+        <ul class="list-group list-group-flush">
+            <!-- Voxelized Structure -->
+            <li class="list-group-item">
+                <button class="btn btn-link text-decoration-none fw-bold" data-bs-toggle="collapse"
+                    data-bs-target="#voxelizedStructure">
+                    📌 Voxelized Structure
+                </button>
+                <div id="voxelizedStructure" class="collapse mt-2">
+                    <p><strong>Input:</strong> `.stl` file representing the 3D structure to be built.</p>
+                    <p><strong>Output:</strong></p>
+                    <ul>
+                        <li>A voxelized representation listing all required voxel positions.</li>
+                        <li>(Optional) A preview of the structure in <strong>Three.js</strong>.</li>
+                    </ul>
+                </div>
+            </li>
+
+            <!-- Building Sequence -->
+            <li class="list-group-item">
+                <button class="btn btn-link text-decoration-none fw-bold" data-bs-toggle="collapse"
+                    data-bs-target="#buildingSequence">
+                    📌 Building Sequence
+                </button>
+                <div id="buildingSequence" class="collapse mt-2">
+                    <p><strong>Input:</strong> List of voxel positions & number of robots.</p>
+                    <p><strong>Output:</strong></p>
+                    <ul>
+                        <li>Optimized starting positions for each robot.</li>
+                        <li>A structured sequence defining voxel placement order.</li>
+                    </ul>
+                </div>
+            </li>
+
+            <!-- Path-Planning -->
+            <li class="list-group-item">
+                <button class="btn btn-link text-decoration-none fw-bold" data-bs-toggle="collapse"
+                    data-bs-target="#pathPlanning">
+                    📌 Path-Planning
+                </button>
+                <div id="pathPlanning" class="collapse mt-2">
+                    <p><strong>Input:</strong> List of sub-goals to construct the structure.</p>
+                    <p><strong>Output:</strong> A sequence of actions required to achieve all sub-goals efficiently.</p>
+                </div>
+            </li>
+
+            <!-- Motion Planning for Bill-E -->
+            <li class="list-group-item">
+                <button class="btn btn-link text-decoration-none fw-bold" data-bs-toggle="collapse"
+                    data-bs-target="#motionPlanning">
+                    📌 Motion Planning for Bill-E
+                </button>
+                <div id="motionPlanning" class="collapse mt-2">
+                    <p><strong>Input:</strong> List of actions for sub-goals.</p>
+                    <p><strong>Output:</strong></p>
+                    <ul>
+                        <li>Start and goal positions (plus orientation) for each leg of every robot.</li>
+                    </ul>
+                </div>
+            </li>
+
+            <!-- Inverse Kinematics for Bill-E -->
+            <li class="list-group-item">
+                <button class="btn btn-link text-decoration-none fw-bold" data-bs-toggle="collapse"
+                    data-bs-target="#inverseKinematics">
+                    📌 Inverse Kinematics for Bill-E
+                </button>
+                <div id="inverseKinematics" class="collapse mt-2">
+                    <p><strong>Input:</strong> Start & goal positions with leg orientations.</p>
+                    <p><strong>Output:</strong> Computed joint angles for executing the movement.</p>
+                </div>
+            </li>
+        </ul>
+
+        <section class="container mt-5">
+            <h4>Code Structure</h4>
+            <p>
+                The simulation was entirely built in JavaScript, leveraging Three.js to enable visualization on any device 
+                without requiring installation—only an internet connection is needed :)
+            </p>
+            <p>The global structure of the code is as follows:</p>
+        
+            <!-- ASCII Diagram Representation -->
+            <pre class="border p-3 bg-light">
+            Demo Code/
+            ├── demo/                   <-- Contains different interactive HTML demos for various simulation aspects.
+            ├── js/                     <-- Core JavaScript scripts handling the simulation logic
+            │   ├── GUI/                <-- Folder with GUI file (one per demo)
+            │   ├── d.js                <-- Additional helper functions
+            │   ├── robot.js            <-- Core robot structure & logic
+            │   ├── robot_movement.js   <-- Movement planning & execution
+            │   ├── scene.js            <-- Three.js scene setup & rendering
+            ├── lib/                    <-- External libraries (Three.js, dat.GUI, etc.)
+            </pre>
+        
+            </ul>
+        </section>
+        
+        <hr>
+        <hr>
+        <section class="container mt-5">             <!-- Building the simulation -->
+
+            <h3>Building up the Simulation</h3>
+            <hr> 
+        
+            <p>
+                Now that you have a clear view of the simulation's global picture, let's detail how the simulation was built from scratch. 
+                For each part of the process, an interactive demo has been designed to help understand the working principles of all algorithms. 
+                To access these demos, simply click on the images below, and the simulation will open in a new window.
+            </p>
+<!-- ============================================================ CREATING THE ROBOT  ============================================================ -->
+        
+            <h4>Creating the Robot</h4>
+            <hr>
+        
+            <p>
+                The robot used in this simulation is based on the <strong>Bill-E robot</strong>, initially introduced in this research paper:  
+                <a href="https://cba.mit.edu/docs/papers/19.07.materialrobot.pdf" target="_blank">
+                    📄 Material Robots: Modular Digital Assembly
+                </a>.
+            </p>
+
+
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <p>
+                        Newer versions of Bill-E may vary in size, but they all function the same way. Bill-E is a <strong>5 DOF (Degrees of Freedom) robotic arm</strong> 
+                        with five joints:  
+                        <ul class="mt-2">
+                            <li><strong>Joints 0 & 4:</strong> Rotate around the normal axis to the surface.</li>
+                            <li><strong>Joints 1, 2, & 3:</strong> Rotate around a local perpendicular axis (which depends on the robot’s orientation).</li>
+                        </ul>
+                        <p>
+                            Each joint has a <strong>rotation range from -135° to 135°</strong>, giving it a <strong>270° total range</strong>. This range is designed to 
+                            ensure the <strong>cable-driven actuation</strong> of the robot remains functional without excessive strain. 
+                            It is important to note that each angle is defined relative to the previous one as showd here: 
+                        </p>                    
+                    </p>
+
+                </div>
+                <div class="col-md-4">
+                        <img src="/images/angles.png" class="img-fluid" alt="Robot Angle">
+                    </a>
+                </div>
+            </div>
+
+            <div class="row align-items-center">
+                <div class="col-md-6">
+                    <a href="/Demo Code/demo/1_demo_Joint.html" target="_blank">
+                        <img src="/images/robot_demo_1.png" class="img-fluid border rounded" alt="Interactive Robot Joint Demo">
+                    </a>
+                </div>
+                <div class="col-md-6">
+                    <p><strong>🔹 Try It Yourself!</strong></p>
+
+                    <p>
+                        In this interactive demo, you can change the robot geometry and
+                        manipulate each joint to understand the robot's kinematics and movement physics.
+                    </p>    
+                    <p>Click on the image to open the <strong>Interactive Robot Joint Demo</strong> in a new tab.</p>
+
+                    <p class="mt-3">
+                        <strong>>>> <a href="/pages/tecnical/main_technical.html" class="text-decoration-none">See the Technical Implementation</a> <<<</strong>
+                    </p>
+
+                </div>
+            </div>
+<!-- ============================================================ IK ============================================================ -->
+            <br>
+            <h4>Inverse Kinematic</h4>
+            <hr>
+            <p>
+                The goal of the <strong> Inverse Kinematics (IK)</strong> is to determines the required joint angles to reach a target position.</li>
+                To avoid heavy computation, a simpler 2 step Inverse kinematic was implemented. 
+                <strong>>>> <a href="/pages/tecnical/main_technical.html" class="text-decoration-none">See the Technical Implementation</a> <<<</strong>
+            </p>
+            <div class="row align-items-center">
+                <div class="col-md-6">
+                    <p><strong>🔹 Try It Yourself!</strong></p>
+                
+                    <p>
+                        In this interactive demo, you can select a target position and observe how the joints adjust to position the end effector at the desired location.
+                        However, achieving full movement in space requires an additional crucial component:  
+                    </p>    
+                    <p>
+                        <strong>Fixed Leg Swapping</strong> – This mechanism allows the robot to alternate its fixed leg, 
+                        enabling it to move dynamically across surfaces.
+
+                    </p>
+                    <p>Click on the image to launch the <strong>Interactive Robot Joint Demo</strong> in a new tab.</p>
+                </div>
+                <div class="col-md-6">
+                    <a href="/Demo Code/demo/2_demo_IK.html" target="_blank">
+                        <img src="/images/robot_demo_2.png" class="img-fluid border rounded" alt="Interactive Robot Joint Demo">
+                    </a>
+                </div>
+            </div>
+<!-- ============================================================ VOXEL IMPORTATION ============================================================ -->
+
+<br>
+<h4>Voxel Importation</h4>
+<hr>
+<p>
+    The <strong>Bill-E robot</strong> is designed to operate in a <strong>voxelized environment</strong>. 
+    In the latest version, each structural unit consists of <strong>4 voxels</strong> assembled together. 
+    This modification was made to <strong>prevent beam flexure</strong> in thinner structures.
+</p>
+
+<p>
+    This differs from <a href="https://fab.cba.mit.edu/classes/865.18/people/Amira/bill_e/index.html" target="_blank">Amira's original simulation</a>, which used a simpler voxel-based approach.
+</p>
+<p>
+    <strong>New Voxel Stacking Rule:</strong>  
+</p>
+<ul>
+    <li> In reality, the voxels are <strong>physically connected using screws</strong>, which the robot rotates to fix or unfix them.</li>
+    <li> Each voxel is <strong> only directly attached to the voxel below it</strong>, meaning that for a stable and fully connected structure, 
+         <strong>each voxel must rest on at least two others</strong>.</li>
+    <li> This constraint <strong>prevents the creation of perfectly cubic structures</strong> as the stacking method requires a staggered placement.</li>
+</ul>
+
+<p>
+    To address this limitation, we are working on implementing an additional <strong>3x2 voxel type</strong> that will allow for
+    more versatile and compact structures.
+</p>
+<div class="row align-items-center">
+    <div class="col-md-6">
+        <a href="/Demo Code/demo/3_demo_voxel.html" target="_blank">
+            <img src="/images/robot_demo_2.png" class="img-fluid border rounded" alt="Interactive Voxel Demo">
+        </a>
+    </div>
+    <div class="col-md-6">
+        <p><strong>🔹 Try It Yourself!</strong></p>
+
+        <p>
+            In this interactive demo, you can place voxels at different coordinates and build small structures.
+        </p>    
+
+
+        <p>Click on the image to launch the <strong>Interactive Voxel Demo</strong> in a new tab.</p>
+    </div>
+</div>
+
+<!-- ============================================================ BASIC MOVEMENT  ============================================================ -->
+
+<br>
+<h4>Set of Movements</h4>
+<hr>
+<p>
+    Since the Bill-E robot operates in a <strong>voxelized space</strong>, only a <strong>finite set of movements</strong> is required 
+    to navigate any environment, regardless of complexity.
+</p>
+
+<div class="row align-items-center">
+    <div class="col-md-6">
+        <p><strong>🔹 Try It Yourself!</strong></p>
+
+        <p>
+            In this interactive demo, you can execute fundamental movements and <strong>observe how each leg moves</strong>, 
+            with real-time trajectory visualization.
+        </p>    
+
+        <p>Click on the image to launch the <strong>Interactive Robot Movement Demo</strong> in a new tab.</p>
+    </div>
+    <div class="col-md-6">
+        <a href="/Demo Code/demo/4_demo_mvt.html" target="_blank">
+            <img src="/images/robot_demo_2.png" class="img-fluid border rounded" alt="Interactive Robot Movement Demo">
+        </a>
+    </div>
+</div>            
+        </section>
+
+        </p>
+        
+    </section>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+
+</html>

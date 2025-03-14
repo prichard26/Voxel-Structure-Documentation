@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title> Demo 1: Simple Robotic arm </title>
+    <title>Demo 3: Voxel Placement</title>
     <style>
         html, body {
             margin: 0;
@@ -27,10 +27,10 @@
         background: rgba(0, 0, 0, 0.5);
         padding: 5px 10px;
         border-radius: 5px;">
-		Demo 1: Simple Robotic arm
-	</div>
-
-	<script type="module">
+        Demo 3: Voxel Placement
+    </div>
+ 
+    <script type="module">
         import * as THREE from "../three/build/three.module.min.js";
         import { STLLoader } from "../three/examples/jsm/loaders/STLLoader.js";
         import { OBJLoader } from '../three/examples/jsm/loaders/OBJLoader.js';
@@ -39,35 +39,12 @@
         import { GPUComputationRenderer } from '../three/examples/jsm/misc/GPUComputationRenderer.js';
     
         import { initScene, scene } from "../js/scene.js";
-        import { setupGUI } from "../js/GUI/gui_demo1.js"; 
-		import { THREERobot } from "../js/robot.js"; 
+        import { setupGUI } from "../js/GUI/gui_demo3.js"; 
+        import { Voxel } from "../js/voxel.js"; 
     
-		// First initialize the scene with the camera angle, the light, the background color and the grid
-		initScene();
-
-		// clearly set origin and target explicitly
-		const originPos = new THREE.Vector3(0,0,0);
-		const targetPos = new THREE.Vector3(1, -1, 1); 
-		const normal = new THREE.Vector3(0, 0, 1);		
-
-		let VisualRobot = new THREERobot(
-			[ [0,0,1.25], [0,0,2], [0,0,2], [0,0,1.25], [0,0,0] ],
-			[
-			[-2*Math.PI, 2*Math.PI],
-			[2*Math.PI, 2*Math.PI],
-			[2*Math.PI, 2*Math.PI],
-			[2*Math.PI, 2*Math.PI],
-			[2*Math.PI, 2*Math.PI]
-			],
-			originPos,
-			targetPos,
-			normal,
-			scene
-		);
-		// Finally setup and update the GIU
-		setupGUI(VisualRobot);
-	</script>
+        initScene();
+        setupGUI(scene);
+    </script>
 
 </body>
 </html>
-

@@ -26,6 +26,8 @@ IDEA :
 We could add an orientation in the robot to be able know what go forward turn right or left mean 
 
 
+SAY that i am now using the new javascript convention ES6 that enables a better use of modules. Say that i have all the need files locally to enhance the performances
+
 
 
 

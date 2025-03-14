@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Technical Implementation | Bill-E Robot Simulation</title>
+    <link rel="stylesheet" href="../styles.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+
+<body>
+
+    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+        <div class="container">
+            <a class="navbar-brand" href="../index.html">Bill-E Robot Simulation</a>
+        </div>
+    </nav>
+
+    <section class="container mt-5">
+        <h2>📌 Technical Implementation</h2>
+        <hr> <!-- Horizontal Line -->
+
+        <p>
+            This section details the core implementation of the Bill-E robot in the simulation.
+            The robot's behavior is implemented using object-oriented programming through a dedicated <strong> THREERobot</strong> class.
+        </p>
+
+        <ul class="list-group list-group-flush">
+            <!-- Robot Class Implementation -->
+            <li class="list-group-item">
+                <h4 class="fw-bold">🔹 Robot Class in robot.js</h4>
+                <p>
+                    The robot is implemented as a <strong>class in robot.js</strong>. This class defines the robot’s properties and its essential functionalities.
+                    The <strong>constructor</strong>initializes the robot by setting:
+                </p>
+                <ul>
+                    <li>✅ The <strong>position</strong> and <strong>orientation</strong> of both legs.</li>
+                    <li>✅ The <strong>joint limits</strong> (range of motion).</li>
+                    <li>✅ The <strong>robot geometry</strong> (size of each leg segment).</li>
+                </ul>
+                <p>
+                    This allows creating multiple instances of the robot with different parameters.
+                </p>
+            </li>
+            <hr>
+
+            <!-- Core Robot Functions -->
+            <li class="list-group-item">
+                <h4 class="fw-bold">🔹 Core Functions in <strong>robot.js</strong></h4>
+                <p>Some key methods implemented in <strong>robot.js</strong>include:</p>
+                <ul>
+                    <li>
+                        <strong>🚀 setToTarget(position, normal)</strong>:  
+                        Moves the robot to the target position and adjusts the leg orientation automatically.
+                    </li>
+                    <li>
+                        <strong>⚙️ updateAnglesFromTarget()</strong>:  
+                        Computes the necessary joint angles to reach the desired position.
+                    </li>
+                    <li>
+                        <strong>🔄 swapFixedLeg()</strong>:  
+                        Changes the leg that remains fixed while the other moves.
+                    </li>
+                    <li>
+                        <strong>🔧 reinitializeRobot()</strong>:  
+                        Destroys the current instance and re-initializes a new robot with updated parameters.
+                    </li>
+                </ul>
+            </li>
+            <hr>
+
+            <!-- Robot Movement Logic -->
+            <li class="list-group-item">
+                <h4 class="fw-bold">🔹 Robot Movement & Inverse Kinematics</h4>
+                <p>
+                    The movement of the robot is handled by <strong>inverse kinematics</strong>, which calculates the joint angles needed to reach a given position.
+                    The <strong>updateAnglesFromTarget()</strong> function automatically adjusts the angles based on the robot's position.
+                </p>
+                <p>
+                    Additionally, movements are smoothed using <strong>Bezier interpolation</strong>, ensuring realistic transitions between different poses.
+                </p>
+            </li>
+            <hr>
+
+            <!-- Interaction with Three.js -->
+            <li class="list-group-item">
+                <h4 class="fw-bold">🔹 Integration with Three.js</h4>
+                <p>
+                    The robot’s 3D model is visualized using **Three.js**, where each joint is represented as a rotatable object.
+                    Scene management, rendering, and user interactions are handled dynamically through Three.js functions.
+                </p>
+            </li>
+        </ul>
+
+        <h5 class="mt-4 text-success">🎉 Now you understand how the robot is implemented!</h5>
+    </section>
+
+
+    <section class="container mt-5">
+
+    <h4 class="fw-bold">🔹 Inverse Kinematics (IK)</h4>
+    <p>
+        The goal of the inverse kinematics system is to compute the joint angles required for the robot’s end effector to reach a target position.
+        Since Bill-E is a <strong>5 Degrees of Freedom (DOF) robotic arm</strong>, solving IK is split into two main steps.
+    </p>
+
+    <h5 class="fw-bold">✔ Step 1: Computing Joint 0 (Yaw Rotation)</h5>
+    <p>
+        The first step in IK is calculating <strong>\(\theta_0\)</strong> (joint 0), which determines how the robot rotates around its base.
+        To achieve this, the target position is first <strong>projected onto the plane</strong> defined by the origin’s normal.
+    </p>
+
+    <p>
+        The projected target position is computed as:
+    </p>
+    <p class="mathjax">
+        \[
+        \mathbf{target}_{\text{proj}} = \mathbf{target} - (\mathbf{normal} \cdot (\mathbf{target} - \mathbf{origin})) \cdot \mathbf{normal}
+        \]
+    </p>
+
+    <p>
+        Then, we compute \(\theta_0\) using the dot and cross product between the robot’s **movement direction** and **projected target vector**:
+    </p>
+    <p class="mathjax">
+        \[
+        \theta_0 = \text{atan2} \left( (\mathbf{direction} \times \mathbf{target}_{\text{proj}}) \cdot \mathbf{normal}, \mathbf{direction} \cdot \mathbf{target}_{\text{proj}} \right)
+        \]
+    </p>
+
+    <h5 class="fw-bold">✔ Step 2: Solving 3-DOF Inverse Kinematics</h5>
+    <p>
+        Once <strong>\(\theta_0\)</strong> is determined, we solve the remaining three angles <strong>(\(\theta_1, \theta_2, \theta_3\))</strong>
+        using classic inverse kinematics for a 3-DOF robotic arm.
+    </p>
+
+    <p>
+        First, we compute the effective distance \( d \) from the base to the projected target:
+    </p>
+
+    <p class="mathjax">
+        \[
+        d^2 = x^2 + y^2
+        \]
+    </p>
+
+    <p>
+        Using the **law of cosines**, we find \(\theta_2\):
+    </p>
+    <p class="mathjax">
+        \[
+        \cos(\theta_2) = \frac{d^2 - L_1^2 - L_2^2}{2 L_1 L_2}
+        \]
+        \[
+        \theta_2 = \cos^{-1} (\cos(\theta_2))
+        \]
+    </p>
+
+    <p>
+        Then, we compute \(\theta_1\) using:
+    </p>
+
+    <p class="mathjax">
+        \[
+        \theta_1 = \tan^{-1} \left( \frac{y}{x} \right) - \tan^{-1} \left( \frac{L_2 \sin(\theta_2)}{L_1 + L_2 \cos(\theta_2)} \right)
+        \]
+    </p>
+
+    <p>
+        Finally, \(\theta_3\) is calculated as:
+    </p>
+
+    <p class="mathjax">
+        \[
+        \theta_3 = \psi - (\theta_1 + \theta_2)
+        \]
+    </p>
+
+    <p>
+        The system also includes a constraint on <strong>\(\theta_3\)</strong> to ensure stability during movement.
+    </p>
+
+    <!-- Placeholder for Image -->
+    <p><em>[An image illustrating the projection of the target onto the plane & IK solving will be added here]</em></p>
+
+    <hr>
+
+    <h4 class="fw-bold">🔹 Fixed Leg Swapping</h4>
+    <p>
+        While IK allows the robot to reach new positions, **Fixed Leg Swapping** enables it to actually move.
+        This process involves shifting the fixed leg to the opposite one and reconstructing the robot at its new base.
+    </p>
+
+    <h5 class="fw-bold">✔ Initial Attempt: Directly Swapping Legs</h5>
+    <p>
+        The first approach involved <strong>swapping the first and last elements</strong> of the **Three.js THREERobot** hierarchy.
+        However, this method led to inconsistencies when the two legs were positioned on different planes (i.e., different normal vectors).
+    </p>
+
+    <h5 class="fw-bold">✔ Final Working Approach: Reconstructing Around the Moving Leg</h5>
+    <p>
+        The final and correct solution was to:
+    </p>
+
+    <ul>
+        <li>✅ Rebuild the robot <strong>at the new moving leg’s position</strong> instead of swapping hierarchy elements.</li>
+        <li>✅ Update the <strong>robot’s direction and orientation</strong> to match the new plane.</li>
+        <li>✅ Recompute the <strong>inverse kinematics</strong> immediately after swapping to ensure a smooth transition.</li>
+    </ul>
+
+    <p>
+        This is implemented in the function <code>reinitializeRobot()</code>, which reconstructs the robot while preserving its internal state.
+    </p>
+
+    <!-- Placeholder for Image -->
+    <p><em>[An image illustrating the correct swapping mechanism will be added here]</em></p>
+
+    <hr>
+
+    <h4 class="fw-bold">🔹 Combining IK & Fixed Leg Swapping</h4>
+    <p>
+        By integrating **Inverse Kinematics** for precise movement and **Fixed Leg Swapping** for repositioning, Bill-E is able to navigate complex voxelized environments autonomously.
+    </p>
+    </section>
+
+<!-- Include MathJax for equation rendering -->
+<script type="text/javascript" async src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+<script type="text/javascript" async
+  src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/MathJax.js?config=TeX-MML-AM_CHTML">
+</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+
+</html>
