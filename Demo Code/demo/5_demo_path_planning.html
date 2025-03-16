@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Demo 5: Path Planning</title>
+    <style>
+        html, body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="webgl"></div>
+
+    <div id="title" style="
+        position: absolute;
+        top: 10px;
+        left: 10px;
+        font-size: 20px;
+        font-weight: bold;
+        color: white;
+        font-family: Arial, sans-serif;
+        background: rgba(0, 0, 0, 0.5);
+        padding: 5px 10px;
+        border-radius: 5px;">
+        Demo 5: Path Planning
+    </div>
+ 
+    <script type="module">
+        import * as THREE from "../three/build/three.module.min.js";
+
+        import { setupGUI } from "../js/GUI/gui_demo5.js";
+        import { THREERobot } from "../js/robot.js";
+        import { initScene, scene } from "../js/scene.js";
+        import { Voxel } from "../js/voxel.js";
+
+        // Initialize the scene
+        initScene();
+
+        // Place voxels (10x10 rectangle)
+        for (let x = -10; x <= 10; x++) {
+            for (let y = -10; y <= 10; y++) {
+                for (let z = 0; z <= 5; z += 0.5) {
+
+                    // ✅ Place voxels only on the boundaries (hollow inside)
+                    if (
+                        x === -10 || x === 10 ||  // Left & Right faces
+                        y === -10 || y === 10 ||  // Front & Back faces
+                        z === 0       // Top & Bottom faces
+                    ) {
+                        let voxel = new Voxel(x, y, z, scene);
+                    }
+                }
+            }
+        }
+
+        // Initialize the robot
+        const originPos = new THREE.Vector3(0,0,0.5);
+        const targetPos = new THREE.Vector3(1, 0,0.5);
+        const normal = new THREE.Vector3(0, 0, 1);
+
+        const robot = new THREERobot(
+            originPos, targetPos, normal, scene
+        );
+
+        // Setup GUI
+        setupGUI(robot, scene);
+
+    </script>
+
+</body>
+</html>

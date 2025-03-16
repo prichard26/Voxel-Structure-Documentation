@@ -23,9 +23,9 @@ export function initScene() {
   	camera.position.set(15, 15, 10);
   	scene.add(camera);
 
-	var light = new THREE.AmbientLight(0xfaaafa);
+	var light = new THREE.AmbientLight(0xffffff);
 	scene.add(light);
-	var light2 = new THREE.DirectionalLight(0xaaaaaa);
+	var light2 = new THREE.DirectionalLight(0xffffff);
 	light2.position.set(1, 1.3, 1).normalize();
 	scene.add(light2);
   

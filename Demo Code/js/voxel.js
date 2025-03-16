@@ -12,7 +12,9 @@ export class Voxel {
         this.path = path;
         this.position = new THREE.Vector3(x, y, z);
         this.loader = new STLLoader();
-        
+
+        if (!window.voxelMap){window.voxelMap = new Set();}
+
         this.loadVoxel();
     }
 
@@ -26,30 +28,33 @@ export class Voxel {
     }
 
     onVoxelLoaded(geometry) {
-        let material = new THREE.MeshStandardMaterial({ color: 0xff00ff, metalness: 0.8, roughness: 0.6 });
+        let material = new THREE.MeshStandardMaterial({ color: 0xfffffff, metalness: 0.8, roughness: 0.6 });
         let voxelMesh = new THREE.Mesh(geometry, material);
 
         let bbox = new THREE.Box3().setFromObject(voxelMesh);
         let size = new THREE.Vector3();
         bbox.getSize(size);
-        console.log("size",size);
-        // ✅ Normalize scale: Ensure X and Y are 1, and Z is proportional
+
+        // Normalize scale: Ensure X and Y are 1, and Z is proportional
         const scaleFactor = new THREE.Vector3(1 / size.x, 1 / size.x, 1 / size.x);
         voxelMesh.scale.set(scaleFactor.x, scaleFactor.y, scaleFactor.z);
-        console.log(voxelMesh)
-        // ✅ Adjust position after scaling
+        // Adjust position after scaling
         bbox = new THREE.Box3().setFromObject(voxelMesh);
         let bboxCenter = new THREE.Vector3();
         bbox.getCenter(bboxCenter);
         voxelMesh.position.copy(this.position).sub(bboxCenter).add(new THREE.Vector3(0, 0, 0.125));
 
 
-        // ✅ Enable shadows
+        // Enable shadows
         voxelMesh.castShadow = true;
         voxelMesh.receiveShadow = true;
 
-        // ✅ Add voxel to the scene
+        // Add voxel to the scene
         this.scene.add(voxelMesh);
-        console.log(`✅ Voxel placed at (${this.position.x}, ${this.position.y}, ${this.position.z})`);
+
+        // Add it to global voxelMap
+        window.voxelMap.add(new THREE.Vector3(this.position.x, this.position.y, this.position.z));
+
+        // console.log(`✅ Voxel placed at (${this.position.x}, ${this.position.y}, ${this.position.z})`);
     }
 }

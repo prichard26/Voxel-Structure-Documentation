@@ -47,6 +47,11 @@ export function goBackward(resolve) {
     });
 }
 
+export function switchLeg(resolve) {
+    this.swapFixedLeg();
+    if (resolve) resolve();
+}
+
 export function climbUp(resolve) {
     let movementVector = this.calculateMovementVector();
     let newNormal = this.target.normal.clone(); 
@@ -222,13 +227,13 @@ export function moveRobot(movementVector, newNormal, resolve = () => {}) { // fu
             let t = stepIndex / INTERMEDIARY_STEPS;
             let interpolatedMovingLeg = cubicBezier(startMovingLeg, control1Moving, control2Moving, endMovingLeg, t);
             
-            this.setToTarget(interpolatedMovingLeg.x, interpolatedMovingLeg.y, interpolatedMovingLeg.z, newNormal.x, newNormal.y, newNormal.z);
+            this.setToTargetIK(interpolatedMovingLeg.x, interpolatedMovingLeg.y, interpolatedMovingLeg.z, newNormal.x, newNormal.y, newNormal.z);
             this.displayTrajectory();
 
             stepIndex++;
             setTimeout(step, DELAY);
         } else {
-            this.setToTarget(endMovingLeg.x, endMovingLeg.y, endMovingLeg.z, newNormal.x, newNormal.y, newNormal.z);
+            this.setToTargetIK(endMovingLeg.x, endMovingLeg.y, endMovingLeg.z, newNormal.x, newNormal.y, newNormal.z);
             this.swapFixedLeg();
             if (!this.legMoved) {
                 this.legMoved = true;
@@ -257,7 +262,7 @@ export function moveLegBezier(startPos, endPos, startNormal, endNormal, resolve 
 
             let interpolatedPos = cubicBezier(startPos, control1, control2, endPos, t);
             let interpolatedNormal = startNormal.clone().lerp(endNormal, t).normalize();
-            this.setToTarget(interpolatedPos.x, interpolatedPos.y, interpolatedPos.z, 
+            this.setToTargetIK(interpolatedPos.x, interpolatedPos.y, interpolatedPos.z, 
                              interpolatedNormal.x, interpolatedNormal.y, interpolatedNormal.z);
 
             this.displayTrajectory();
@@ -266,7 +271,7 @@ export function moveLegBezier(startPos, endPos, startNormal, endNormal, resolve 
             clearTimeout(timeoutID);
             timeoutID = setTimeout(step, DELAY);
         } else { // ensure final pos is reached 
-            this.setToTarget(endPos.x, endPos.y, endPos.z, endNormal.x, endNormal.y, endNormal.z);
+            this.setToTargetIK(endPos.x, endPos.y, endPos.z, endNormal.x, endNormal.y, endNormal.z);
             this.displayTrajectory()
 
             if (resolve) resolve();
@@ -286,7 +291,7 @@ export function interpolateMovement(startPos, endPos, startNormal, endNormal, tr
             let interpolatedPos = startPos.clone().lerp(endPos, t);
             let interpolatedNormal = startNormal.clone().lerp(endNormal, t).normalize();
 
-            this.setToTarget(interpolatedPos.x, interpolatedPos.y, interpolatedPos.z, 
+            this.setToTargetIK(interpolatedPos.x, interpolatedPos.y, interpolatedPos.z, 
                              interpolatedNormal.x, interpolatedNormal.y, interpolatedNormal.z, transitionType);
             
             this.displayTrajectory()
@@ -366,7 +371,7 @@ export function rotateMovingLeg(rotationAxis, angleOffset, resolve = () => {}) {
             let lift = Math.sin(Math.PI * (stepIndex / INTERMEDIARY_STEPS)) * (STEP_SIZE / 3);
             interpolatedMovingLeg.add(rotationAxis.clone().normalize().multiplyScalar(lift));   // Apply elevation smoothly
 
-            this.setToTarget(interpolatedMovingLeg.x, interpolatedMovingLeg.y, interpolatedMovingLeg.z, this.target.normal.x,this.target.normal.y,this.target.normal.z);
+            this.setToTargetIK(interpolatedMovingLeg.x, interpolatedMovingLeg.y, interpolatedMovingLeg.z, this.target.normal.x,this.target.normal.y,this.target.normal.z);
 
             if (this.showTrajectory) this.displayTrajectory();
 

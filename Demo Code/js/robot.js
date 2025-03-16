@@ -1,12 +1,23 @@
 
 import * as THREE from "../three/build/three.module.min.js"; 
 
-import {goForward, goBackward, turnRight, turnLeft, climbUp, climbDown, planTransitionConcave, 
+import {goForward, goBackward, switchLeg, turnRight, turnLeft, climbUp, climbDown, planTransitionConcave, 
         planTransitionConvex, moveRobot, rotateMovingLeg, calculateMovementVector, displayTrajectory, 
         clearTrajectory,interpolateMovement, moveLegBezier } from "./robot_movement.js";
 
+import { planPathToCoordinate } from './path_planner.js';
+
+const DEFAULT_GEO = [[0,0,1.25], [0,0,2], [0,0,2], [0,0,1.25], [0,0,0]]
+const DEFAULT_LIMITS = [
+                        [-2*Math.PI, 2*Math.PI],
+                        [2*Math.PI, 2*Math.PI],
+                        [2*Math.PI, 2*Math.PI],
+                        [2*Math.PI, 2*Math.PI],
+                        [2*Math.PI, 2*Math.PI]
+                        ]
+
 export class THREERobot{
-    constructor(initialGeometry, limits, origin, target, normal, scene) {
+    constructor(origin, target, normal, scene, initialGeometry = DEFAULT_GEO , limits = DEFAULT_LIMITS) {
         this.scene = scene;
         this.angles = [0, 0, 0, 0, 0]; 
         this.joints = [];                           // Contains the angle of each joint
@@ -64,7 +75,7 @@ export class THREERobot{
         this.updateAnglesFromTarget();              // Find and apply the angle needed to reach target
 
         this.target.position.copy(this.computeEndEffectorPosition());
-        this.joints[this.fixed_leg].children[0].material.color.set(0x6a0088); // Change fixed leg color
+        this.joints[this.fixed_leg].children[0].material.color.set(0xff00ff); // Change fixed leg color
     }
     
     buildRobot(initialGeometry, limits) {
@@ -155,7 +166,7 @@ export class THREERobot{
         for (let i = 0; i < currentAngles.length; i++) {
             this.setAngle(i, currentAngles[i]);
         }
-        this.joints[this.fixed_leg].children[0].material.color.set(0x6a0088);
+        this.joints[this.fixed_leg].children[0].material.color.set(0xff00ff);
     }
     
     setAngles(angles1) {
@@ -172,7 +183,7 @@ export class THREERobot{
         this.setAngles(this.angles);
     }
     
-    setToTarget(px, py, pz, nx,ny,nz, transitionType = null) {
+    setToTargetIK(px, py, pz, nx,ny,nz, transitionType = null) {
         this.target.position.set(px, py, pz);
         this.target.normal.set(nx,ny,nz);
         this.transitionType = transitionType;
@@ -376,6 +387,7 @@ export class THREERobot{
     
             if (action === "goForward") this.goForward(resolve);
             else if (action === "goBackward") this.goBackward(resolve);
+            else if (action === "switchLeg") this.switchLeg(resolve);
             else if (action === "turnRight") this.turnRight(resolve);
             else if (action === "turnLeft") this.turnLeft(resolve);
             else if (action === "climbUp") this.climbUp(resolve);
@@ -390,6 +402,7 @@ export class THREERobot{
 // Attach movement functions dynamically
 THREERobot.prototype.goForward = goForward;
 THREERobot.prototype.goBackward = goBackward;
+THREERobot.prototype.switchLeg = switchLeg;
 THREERobot.prototype.turnRight = turnRight;
 THREERobot.prototype.turnLeft = turnLeft;
 THREERobot.prototype.planTransitionConcave = planTransitionConcave;
@@ -405,8 +418,10 @@ THREERobot.prototype.rotateMovingLeg = rotateMovingLeg;
 THREERobot.prototype.moveLegBezier = moveLegBezier;
 
 THREERobot.prototype.interpolateMovement = interpolateMovement;
-
-
+// THREERobot.prototype.planPathToCoordinate = planPathToCoordinate;
+THREERobot.prototype.planPathToCoordinate = function(goalPos, goalNormal) {
+    return planPathToCoordinate.call(this, goalPos, goalNormal); // Bind function to robot instance
+};
 // The planTransition function will handle the transition between two adjacent surfaces by adjusting the robot’s legs to match the new surface orientation. There are two cases:
 // 	1.	Concave Transition:
 // 	•	The robot transitions from a surface to another at a 90-degree inward angle.
