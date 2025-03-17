@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Demo 5: Path Planning</title>
+    <style>
+        html, body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="webgl"></div>
+
+    <div id="title" style="
+        position: absolute;
+        top: 10px;
+        left: 10px;
+        font-size: 20px;
+        font-weight: bold;
+        color: white;
+        font-family: Arial, sans-serif;
+        background: rgba(0, 0, 0, 0.5);
+        padding: 5px 10px;
+        border-radius: 5px;">
+        Demo 5: Path Planning
+    </div>
+ 
+    <script type="module">
+        import * as THREE from "../three/build/three.module.min.js";
+
+        import { setupGUI } from "../js/GUI/gui_demo5.js";
+        import { THREERobot } from "../js/robot.js";
+        import { initScene, scene } from "../js/scene.js";
+        import { Voxel } from "../js/voxel.js";
+
+        // Initialize the scene
+        initScene();
+
+        for (let x = -4; x <= 4; x++) {
+            for (let y = -4; y <= 4; y++) {
+                let voxel = new Voxel(x, y, 0, scene);
+            }
+        }
+
+        for (let x = 4; x <= 8; x++) {
+            for (let y = -8; y <= 8; y++) {
+                for (let z = 0.5; z <= 1; z += 0.5) {
+                    let voxel = new Voxel(x, y, z, scene);
+                }
+            }
+        }
+
+        for (let x = 0; x <= 4; x++) {
+            for (let y = 5; y <= 8; y++) {
+                for (let z = 1.5; z <= 2; z += 0.5) {  // 2 stacked voxels (0.5 height each)
+                    let voxel = new Voxel(x, y, z, scene);
+                }
+            }
+        }
+
+        for (let x = 0; x <= 4; x++) {
+            for (let y = -8; y <= -5; y++) {
+                for (let z = 1.5; z <= 2; z += 0.5) {  // 2 stacked voxels (0.5 height each)
+                    let voxel = new Voxel(x, y, z, scene);
+                }
+            }
+        }
+
+        for (let x = -4; x <= 0; x++) {
+            for (let y = 5; y <= 8; y++) {
+                for (let z = 2.5; z <= 3; z += 0.5) {  // 2 stacked voxels (0.5 height each)
+                    let voxel = new Voxel(x, y, z, scene);
+                }
+            }
+        }
+
+        for (let x = -4; x <= 0; x++) {
+            for (let y = -8; y <= -5; y++) {
+                for (let z = 2.5; z <= 3; z += 0.5) {  // 2 stacked voxels (0.5 height each)
+                    let voxel = new Voxel(x, y, z, scene);
+                }
+            }
+        }
+
+        for (let x = -8; x <= -4; x++) {
+            for (let y = 5; y <= 8; y++) {
+                for (let z = 3.5; z <= 4; z += 0.5) {  // 2 stacked voxels (0.5 height each)
+                    let voxel = new Voxel(x, y, z, scene);
+                }
+            }
+        }
+
+        for (let x = -8; x <= -4; x++) {
+            for (let y = -8; y <= -5; y++) {
+                for (let z = 3.5; z <= 4; z += 0.5) {  // 2 stacked voxels (0.5 height each)
+                    let voxel = new Voxel(x, y, z, scene);
+                }
+            }
+        }
+
+        for (let x = -8; x <= -5; x++) {
+            for (let y = -5; y <= 5; y++) {
+                for (let z = 4.5; z <= 5; z += 0.5) {  // 2 stacked voxels (0.5 height each)
+                    let voxel = new Voxel(x, y, z, scene);
+                }
+            }
+        }
+        
+        for (let x = -6; x <= -5; x++) {
+            for (let y = -1; y <= 1; y++) {
+                for (let z = 0; z <= 5; z += 0.5) {
+                    let voxel = new Voxel(x, y, z, scene);
+                }
+            }
+        }
+
+
+        // Initialize the robot
+        const originPos = new THREE.Vector3(0,0,0.5);
+        const targetPos = new THREE.Vector3(1, 0,0.5);
+        const normal = new THREE.Vector3(0, 0, 1);
+
+        const robot = new THREERobot(
+            originPos, targetPos, normal, scene
+        );
+
+        // Setup GUI
+        setupGUI(robot, scene);
+
+    </script>
+
+</body>
+</html>

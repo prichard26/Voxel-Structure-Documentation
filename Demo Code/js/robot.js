@@ -3,7 +3,8 @@ import * as THREE from "../three/build/three.module.min.js";
 
 import {goForward, goBackward, switchLeg, turnRight, turnLeft, climbUp, climbDown, planTransitionConcave, 
         planTransitionConvex, moveRobot, rotateMovingLeg, calculateMovementVector, displayTrajectory, 
-        clearTrajectory,interpolateMovement, moveLegBezier } from "./robot_movement.js";
+        clearTrajectory,interpolateMovement, moveLegBezier,
+        sideStepUpRight, sideStepDownRight, sideStepUpLeft, sideStepDownLeft } from "./robot_movement.js";
 
 import { planPathToCoordinate } from './path_planner.js';
 
@@ -392,6 +393,10 @@ export class THREERobot{
             else if (action === "turnLeft") this.turnLeft(resolve);
             else if (action === "climbUp") this.climbUp(resolve);
             else if (action === "climbDown") this.climbDown(resolve);
+            else if (action ==="sideStepDownRight") this.sideStepDownRight(resolve);
+            else if (action ==="sideStepUpRight") this.sideStepUpRight(resolve);
+            else if (action ==="sideStepDownLeft") this.sideStepDownLeft(resolve);
+            else if (action ==="sideStepUpLeft") this.sideStepUpLeft(resolve);
             else if (action === "planTransitionConcave") this.planTransitionConcave(resolve);
             else if (action === "planTransitionConvex") this.planTransitionConvex(resolve);
             else resolve(); 
@@ -416,6 +421,10 @@ THREERobot.prototype.displayTrajectory = displayTrajectory;
 THREERobot.prototype.clearTrajectory = clearTrajectory;
 THREERobot.prototype.rotateMovingLeg = rotateMovingLeg;
 THREERobot.prototype.moveLegBezier = moveLegBezier;
+THREERobot.prototype.sideStepDownRight = sideStepDownRight;
+THREERobot.prototype.sideStepUpRight = sideStepUpRight;
+THREERobot.prototype.sideStepDownLeft = sideStepDownLeft;
+THREERobot.prototype.sideStepUpLeft = sideStepUpLeft;
 
 THREERobot.prototype.interpolateMovement = interpolateMovement;
 // THREERobot.prototype.planPathToCoordinate = planPathToCoordinate;

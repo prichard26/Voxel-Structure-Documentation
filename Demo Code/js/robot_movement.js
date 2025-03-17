@@ -59,7 +59,7 @@ export function climbUp(resolve) {
     let startMovingLeg  = this.target.position;
     let startMovingLeg2 = this.origin.position;
 
-    let step1 = movementVector.clone().multiplyScalar(1 * STEP_SIZE);                           // Move forward
+    let step1 = movementVector.clone().multiplyScalar(2 * STEP_SIZE);                           // Move forward
     let step2 = newNormal.clone().multiplyScalar(1 * STEP_SIZE);                                // Move up 
     let firstLegEndPosition = startMovingLeg.clone().add(step1).add(step2)
                                             .multiplyScalar(10).round().divideScalar(10);       // First leg moves first
@@ -83,8 +83,109 @@ export function climbDown(resolve) {
     let startMovingLeg  = this.target.position;
     let startMovingLeg2 = this.origin.position;
 
-    let step1 = movementVector.clone().multiplyScalar(1 * STEP_SIZE);                           // Move forward
+    let step1 = movementVector.clone().multiplyScalar(2 * STEP_SIZE);                           // Move forward
     let step2 = newNormal.clone().multiplyScalar(1 * STEP_SIZE);                                // Move down 
+    let firstLegEndPosition = startMovingLeg.clone().add(step1).sub(step2)
+                                            .multiplyScalar(10).round().divideScalar(10);       // First leg moves first
+    let secondLegEndPosition = startMovingLeg2.clone().add(step1).sub(step2)
+                                              .multiplyScalar(10).round().divideScalar(10);     // Then second leg moves 
+
+    this.moveLegBezier(startMovingLeg, firstLegEndPosition, this.target.normal, newNormal, () => {
+        this.swapFixedLeg();
+    
+        this.moveLegBezier(startMovingLeg2, secondLegEndPosition, this.origin.normal, newNormal, () => {
+            this.swapFixedLeg();
+            if (resolve) resolve();
+        });
+    });
+}
+
+export function sideStepUpRight(resolve) {
+    let movementVector = this.calculateMovementVector();
+    let newNormal = this.target.normal.clone(); 
+    let rotationVector = new THREE.Vector3().crossVectors(movementVector, newNormal).normalize();
+
+    let startMovingLeg  = this.target.position;
+    let startMovingLeg2 = this.origin.position;
+
+    let step1 = rotationVector.clone().multiplyScalar(STEP_SIZE);                               // Move side way
+    let step2 = newNormal.clone().multiplyScalar(1 * STEP_SIZE);                                // Move up 
+    let firstLegEndPosition = startMovingLeg.clone().add(step1).add(step2)
+                                            .multiplyScalar(10).round().divideScalar(10);       // First leg moves first
+    let secondLegEndPosition = startMovingLeg2.clone().add(step1).add(step2)
+                                              .multiplyScalar(10).round().divideScalar(10);     // Then second leg moves 
+
+    this.moveLegBezier(startMovingLeg, firstLegEndPosition, this.target.normal, newNormal, () => {
+        this.swapFixedLeg();
+    
+        this.moveLegBezier(startMovingLeg2, secondLegEndPosition, this.origin.normal, newNormal, () => {
+            this.swapFixedLeg();
+            if (resolve) resolve();
+        });
+    });
+}
+
+export function sideStepDownRight(resolve) {
+    let movementVector = this.calculateMovementVector();
+    let newNormal = this.target.normal.clone(); 
+    let rotationVector = new THREE.Vector3().crossVectors(movementVector, newNormal).normalize();
+
+    let startMovingLeg  = this.target.position;
+    let startMovingLeg2 = this.origin.position;
+
+    let step1 = rotationVector.clone().multiplyScalar(STEP_SIZE);                               // Move side way
+    let step2 = newNormal.clone().multiplyScalar(1 * STEP_SIZE);                                // Move up 
+    let firstLegEndPosition = startMovingLeg.clone().add(step1).sub(step2)
+                                            .multiplyScalar(10).round().divideScalar(10);       // First leg moves first
+    let secondLegEndPosition = startMovingLeg2.clone().add(step1).sub(step2)
+                                              .multiplyScalar(10).round().divideScalar(10);     // Then second leg moves 
+
+    this.moveLegBezier(startMovingLeg, firstLegEndPosition, this.target.normal, newNormal, () => {
+        this.swapFixedLeg();
+    
+        this.moveLegBezier(startMovingLeg2, secondLegEndPosition, this.origin.normal, newNormal, () => {
+            this.swapFixedLeg();
+            if (resolve) resolve();
+        });
+    });
+}
+
+
+export function sideStepUpLeft(resolve) {
+    let movementVector = this.calculateMovementVector();
+    let newNormal = this.target.normal.clone(); 
+    let rotationVector = new THREE.Vector3().crossVectors(newNormal,movementVector).normalize();
+
+    let startMovingLeg  = this.target.position;
+    let startMovingLeg2 = this.origin.position;
+
+    let step1 = rotationVector.clone().multiplyScalar(STEP_SIZE);                               // Move side way
+    let step2 = newNormal.clone().multiplyScalar(1 * STEP_SIZE);                                // Move up 
+    let firstLegEndPosition = startMovingLeg.clone().add(step1).add(step2)
+                                            .multiplyScalar(10).round().divideScalar(10);       // First leg moves first
+    let secondLegEndPosition = startMovingLeg2.clone().add(step1).add(step2)
+                                              .multiplyScalar(10).round().divideScalar(10);     // Then second leg moves 
+
+    this.moveLegBezier(startMovingLeg, firstLegEndPosition, this.target.normal, newNormal, () => {
+        this.swapFixedLeg();
+    
+        this.moveLegBezier(startMovingLeg2, secondLegEndPosition, this.origin.normal, newNormal, () => {
+            this.swapFixedLeg();
+            if (resolve) resolve();
+        });
+    });
+}
+
+export function sideStepDownLeft(resolve) {
+    let movementVector = this.calculateMovementVector();
+    let newNormal = this.target.normal.clone(); 
+    let rotationVector = new THREE.Vector3().crossVectors(newNormal,movementVector).normalize();
+
+    let startMovingLeg  = this.target.position;
+    let startMovingLeg2 = this.origin.position;
+
+    let step1 = rotationVector.clone().multiplyScalar(STEP_SIZE);                               // Move side way
+    let step2 = newNormal.clone().multiplyScalar(1 * STEP_SIZE);                                // Move up 
     let firstLegEndPosition = startMovingLeg.clone().add(step1).sub(step2)
                                             .multiplyScalar(10).round().divideScalar(10);       // First leg moves first
     let secondLegEndPosition = startMovingLeg2.clone().add(step1).sub(step2)
