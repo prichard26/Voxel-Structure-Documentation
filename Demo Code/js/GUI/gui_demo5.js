@@ -63,8 +63,8 @@ export function setupGUI(robotInstance, scene) {
                 return;
             }
 
-            const goalPosition = highestVoxelPos.clone();
             const goalNormal = new THREE.Vector3(0, 0, 1); // Assume upward normal
+            const goalPosition = highestVoxelPos.clone().add(goalNormal.clone().multiplyScalar(0.5));
 
             let { success, path } = await robotInstance.planPathToCoordinate(goalPosition, goalNormal);
 

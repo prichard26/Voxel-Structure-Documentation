@@ -2,7 +2,7 @@ import * as THREE from "../three/build/three.module.min.js";
 
 
 const STEP_SIZE = 1.0;              // Global step size should match voxel size
-const INTERMEDIARY_STEPS = 25;      // number of interpolated point in each movment (reduce for faster simulation)
+const INTERMEDIARY_STEPS = 20;      // number of interpolated point in each movment (reduce for faster simulation)
 const DELAY = 10;                   // delay between two movement 
 
 export function goForward(resolve) {
@@ -256,17 +256,15 @@ export function planTransitionConvex(resolve) {
     let movementVector = this.calculateMovementVector();
     let currentNormal = this.origin.normal.clone(); 
 
-     let step1 = movementVector.clone().multiplyScalar(0.5 * STEP_SIZE);        // Move forward
+    let step1 = movementVector.clone().multiplyScalar(0.5 * STEP_SIZE);        // Move forward
     let step2 = currentNormal.clone().multiplyScalar(1.5 * STEP_SIZE);          // Move up onto new surface
     
-     let rotationAxis = new THREE.Vector3().crossVectors(movementVector, currentNormal).normalize();
+    let rotationAxis = new THREE.Vector3().crossVectors(movementVector, currentNormal).normalize();
     let newNormal = currentNormal.clone().applyAxisAngle(rotationAxis, -Math.PI / 2).normalize();
  
     let firstLegPosition = startMovingLeg.clone().add(step1).sub(step2);        // First leg moves onto the wall
 
     this.interpolateMovement(startMovingLeg, firstLegPosition, currentNormal, newNormal, 'Convex',() => {
-        let startMovingLeg = this.target.position.clone();
-
         this.swapFixedLeg();                                                    // Swap fixed leg after first move
         let step3 = movementVector.clone().multiplyScalar(1.5 * STEP_SIZE);  
         let step4 = currentNormal.clone().multiplyScalar(0.5 * STEP_SIZE);  

@@ -30,4 +30,4 @@ SAY that i am now using the new javascript convention ES6 that enables a better 
 
 
 
-
+Quantitatively compare the the version of A* and XYZ XZY YZX YXZ

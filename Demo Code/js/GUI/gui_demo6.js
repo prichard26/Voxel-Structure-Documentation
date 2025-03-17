@@ -21,37 +21,53 @@ let normalArrow = null; // Arrow Helper to visualize the normal
             if (this.highlightedVoxel && this.highlightedVoxel.material) {
                 this.highlightedVoxel.material.color.set(0xffffff);
             }
-
-            // ✅ Check if voxel exists in voxelMap before modifying the scene
-            const voxelExists = [...window.voxelMap].some(v =>
-                v.equals(new THREE.Vector3(this.x, this.y, this.z))
-            );
-
-            if (!voxelExists) {
+        
+            // ✅ Define the main and below voxel positions
+            let targetVoxelPos = new THREE.Vector3(this.x, this.y, this.z);
+            let belowVoxelPos = new THREE.Vector3(this.x, this.y, this.z - 0.5);
+        
+            // ✅ Check if the main voxel exists
+            const mainVoxelExists = [...window.voxelMap].some(v => v.equals(targetVoxelPos));
+            const belowVoxelExists = [...window.voxelMap].some(v => v.equals(belowVoxelPos));
+        
+            if (!mainVoxelExists) {
                 console.warn("❌ No voxel found at:", this.x, this.y, this.z);
                 return;
             }
-
-            // ✅ Search for voxel object in the scene at the given coordinates
+        
+            // ✅ Search and highlight main voxel
             let foundVoxel = null;
             scene.traverse((object) => {
-                if (object.isMesh && object.position) { // ✅ Only check meshes
-                    let objectPos = object.position.clone().round(); // ✅ Round to avoid precision issues
-                    let targetPos = new THREE.Vector3(this.x, this.y, this.z).round();
-        
-                    if (objectPos.equals(targetPos)) {
+                if (object.isMesh && object.position) { 
+                    let objectPos = object.position.clone().round();
+                    if (objectPos.equals(targetVoxelPos)) {
                         foundVoxel = object;
                     }
                 }
             });
-
+        
             if (foundVoxel && foundVoxel.material) {
-                foundVoxel.material.color.set(0xff0000); // Highlight voxel in red
+                foundVoxel.material.color.set(0xff0000); // Highlight main voxel in red
                 this.highlightedVoxel = foundVoxel;
-            } else {
-                console.warn(`⚠️ Voxel exists in voxelMap but not found in scene at (${this.x}, ${this.y}, ${this.z})`);
             }
-
+        
+            // Search and highlight the voxel below, if it exists
+            let foundBelowVoxel = null;
+            if (belowVoxelExists) {
+                scene.traverse((object) => {
+                    if (object.isMesh && object.position) { 
+                        let objectPos = object.position.clone().round();
+                        if (objectPos.equals(belowVoxelPos)) {
+                            foundBelowVoxel = object;
+                        }
+                    }
+                });
+        
+                if (foundBelowVoxel && foundBelowVoxel.material) {
+                    foundBelowVoxel.material.color.set(0xff0000); // Highlight voxel below in red
+                }
+            }
+        
             // ✅ Update normal arrow visualization
             this.updateNormalArrow();
         };
@@ -71,8 +87,8 @@ let normalArrow = null; // Arrow Helper to visualize the normal
         };
 
         this.goToTarget = async () => {
-            const goalPosition = new THREE.Vector3(this.x, this.y, this.z);
             const goalNormal = new THREE.Vector3(this.nx, this.ny, this.nz).normalize();
+            const goalPosition = new THREE.Vector3(this.x, this.y, this.z).add(goalNormal.clone().multiplyScalar(0.5));
 
             let { success, path } = await robotInstance.planPathToCoordinate(goalPosition, goalNormal);
 
@@ -92,9 +108,9 @@ let normalArrow = null; // Arrow Helper to visualize the normal
     const gui = new GUI();
 
     let targetFolder = gui.addFolder("Robot Target");
-    targetFolder.add(guiControls, 'x', -10, 10, 1).name("X Coordinate").onChange(guiControls.updateVoxelColor);
-    targetFolder.add(guiControls, 'y', -10, 10, 1).name("Y Coordinate").onChange(guiControls.updateVoxelColor);
-    targetFolder.add(guiControls, 'z', 0, 5, 0.5).name("Z Coordinate").onChange(guiControls.updateVoxelColor);
+    targetFolder.add(guiControls, 'x', -10, 11, 1).name("X Coordinate").onChange(guiControls.updateVoxelColor);
+    targetFolder.add(guiControls, 'y', -10, 11, 1).name("Y Coordinate").onChange(guiControls.updateVoxelColor);
+    targetFolder.add(guiControls, 'z', 0, 6, 1).name("Z Coordinate").onChange(guiControls.updateVoxelColor);
 
     let normalFolder = gui.addFolder("Target Normal");
     normalFolder.add(guiControls, 'nx', -1, 1, 1).name("Normal X").onChange(guiControls.updateNormalArrow);

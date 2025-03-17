@@ -41,84 +41,38 @@
         // Initialize the scene
         initScene();
 
-        for (let x = -4; x <= 4; x++) {
-            for (let y = -4; y <= 4; y++) {
-                let voxel = new Voxel(x, y, 0, scene);
+        
+        const sceneSize = 10;  // Grid size in XY
+        const maxHeight = 5;   // Max height in Z
+        const towerDensity = 0.3;  // Probability of placing a tower
+
+        // Generate the base layer (10x10 grid at z=0), avoiding (0,0,0) and (1,0,0)
+        for (let x = -sceneSize; x <= sceneSize; x += 2) {  
+            for (let y = -sceneSize; y <= sceneSize; y += 2) {                
+                new Voxel(x, y, 0, scene);  
+                new Voxel(x + 1, y, 0, scene);
+                new Voxel(x, y + 1, 0, scene);
+                new Voxel(x + 1, y + 1, 0, scene);
             }
         }
 
-        for (let x = 4; x <= 8; x++) {
-            for (let y = -8; y <= 8; y++) {
-                for (let z = 0.5; z <= 1; z += 0.5) {
-                    let voxel = new Voxel(x, y, z, scene);
-                }
-            }
-        }
+        // Generate towers, avoiding (0,0,0) and (1,0,0)
+        for (let x = -sceneSize; x <= sceneSize; x += 2) {
+            for (let y = -sceneSize; y <= sceneSize; y += 2) {
+                if ((x === 0 && y === 0) || (x === 1 && y === 0)) continue; // Skip robot space
 
-        for (let x = 0; x <= 4; x++) {
-            for (let y = 5; y <= 8; y++) {
-                for (let z = 1.5; z <= 2; z += 0.5) {  // 2 stacked voxels (0.5 height each)
-                    let voxel = new Voxel(x, y, z, scene);
-                }
-            }
-        }
-
-        for (let x = 0; x <= 4; x++) {
-            for (let y = -8; y <= -5; y++) {
-                for (let z = 1.5; z <= 2; z += 0.5) {  // 2 stacked voxels (0.5 height each)
-                    let voxel = new Voxel(x, y, z, scene);
-                }
-            }
-        }
-
-        for (let x = -4; x <= 0; x++) {
-            for (let y = 5; y <= 8; y++) {
-                for (let z = 2.5; z <= 3; z += 0.5) {  // 2 stacked voxels (0.5 height each)
-                    let voxel = new Voxel(x, y, z, scene);
-                }
-            }
-        }
-
-        for (let x = -4; x <= 0; x++) {
-            for (let y = -8; y <= -5; y++) {
-                for (let z = 2.5; z <= 3; z += 0.5) {  // 2 stacked voxels (0.5 height each)
-                    let voxel = new Voxel(x, y, z, scene);
-                }
-            }
-        }
-
-        for (let x = -8; x <= -4; x++) {
-            for (let y = 5; y <= 8; y++) {
-                for (let z = 3.5; z <= 4; z += 0.5) {  // 2 stacked voxels (0.5 height each)
-                    let voxel = new Voxel(x, y, z, scene);
-                }
-            }
-        }
-
-        for (let x = -8; x <= -4; x++) {
-            for (let y = -8; y <= -5; y++) {
-                for (let z = 3.5; z <= 4; z += 0.5) {  // 2 stacked voxels (0.5 height each)
-                    let voxel = new Voxel(x, y, z, scene);
-                }
-            }
-        }
-
-        for (let x = -8; x <= -5; x++) {
-            for (let y = -5; y <= 5; y++) {
-                for (let z = 4.5; z <= 5; z += 0.5) {  // 2 stacked voxels (0.5 height each)
-                    let voxel = new Voxel(x, y, z, scene);
+                if (Math.random() < towerDensity) {  // Place a tower randomly
+                    let towerHeight = Math.floor(Math.random() * maxHeight) + 1;
+                    for (let z = 0.5; z <= towerHeight; z += 0.5) {  // Start at z=0.5, every 0.5 step
+                        new Voxel(x, y, z, scene);
+                        new Voxel(x + 1, y, z, scene);
+                        new Voxel(x, y + 1, z, scene);
+                        new Voxel(x + 1, y + 1, z, scene);
+                    }
                 }
             }
         }
         
-        for (let x = -6; x <= -5; x++) {
-            for (let y = -1; y <= 1; y++) {
-                for (let z = 0; z <= 5; z += 0.5) {
-                    let voxel = new Voxel(x, y, z, scene);
-                }
-            }
-        }
-
 
         // Initialize the robot
         const originPos = new THREE.Vector3(0,0,0.5);
