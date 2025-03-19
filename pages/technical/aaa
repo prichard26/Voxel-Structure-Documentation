@@ -15,6 +15,42 @@
         <div class="container">
             <a class="navbar-brand" href="../index.html">Bill-E Robot Simulation</a>
         </div>
+        <nav>
+            <ul>
+                <li><a href="../index.html">🏠 Home</a></li>
+                <li><a href="main_technical.html">📖 Main Technical</a></li>
+                <li><a href="robot.html">🤖 Robot</a></li>
+                <li><a href="movement.html">🦿 Movement</a></li>
+                <li><a href="pathPlanning.html">🗺️ Path Planning</a></li>
+                <li><a href="scene.html">🌎 Scene</a></li>
+                <li><a href="demo.html">🎥 Demo</a></li>
+            </ul>
+        </nav>
+        
+        <style>
+            nav {
+                background: #222;
+                padding: 10px 0;
+                text-align: center;
+            }
+            nav ul {
+                list-style: none;
+                padding: 0;
+                margin: 0;
+            }
+            nav ul li {
+                display: inline;
+                margin: 0 15px;
+            }
+            nav ul li a {
+                color: white;
+                text-decoration: none;
+                font-size: 14px;
+            }
+            nav ul li a:hover {
+                color: #f4a261;
+            }
+        </style>
     </nav>
 
     <section class="container mt-5">

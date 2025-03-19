@@ -47,14 +47,10 @@ export function setupGUI(robotInstance) {
         targetXController.updateDisplay();
         targetYController.updateDisplay();
         targetZController.updateDisplay();
-        targetNXController.updateDisplay();
-        targetNYController.updateDisplay();
-        targetNZController.updateDisplay();
-        
     });
 
     function updateTarget(){
-        robotInstance.setToTarget(guiControls.targetX, guiControls.targetY, guiControls.targetZ, guiControls.targetNX, guiControls.targetNY, guiControls.targetNZ);
+        robotInstance.setToTargetIK(guiControls.targetX, guiControls.targetY, guiControls.targetZ, guiControls.targetNX, guiControls.targetNY, guiControls.targetNZ);
         updateGUI(robotInstance);
     }
 }

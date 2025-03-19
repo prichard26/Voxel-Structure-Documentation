@@ -2,7 +2,7 @@ import * as THREE from "../three/build/three.module.min.js";
 import { STLLoader } from "../three/examples/jsm/loaders/STLLoader.js";
 
 export class Voxel {
-    constructor(x, y, z, scene, path = "../voxel.stl") {
+    constructor(x, y, z, scene, path = "../voxel/voxel_4by4.stl") {
         if (typeof x !== "number" || typeof y !== "number" || typeof z !== "number") {
             console.error(" Error: Voxel coordinates must be numbers.");
             return;

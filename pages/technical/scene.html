@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bill-E Robot | Scene</title>
+    <link rel="stylesheet" href="../../styles.css">
+    <script src="../../script.js" defer></script> <!-- Load the navbar dynamically -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js" defer></script>
+    <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; margin: 40px; background-color: #f4f4f4; color: #333; }
+        h1, h2 { color: #222; }
+        pre { background: #222; color: #0f0; padding: 10px; border-radius: 5px; white-space: pre-wrap; }
+        code { background: #eee; padding: 3px 6px; border-radius: 3px; }
+        .container { max-width: 900px; margin: auto; padding: 20px; background: white; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+        .section { margin-bottom: 30px; padding: 20px; background: #f9f9f9; border-left: 5px solid #71bada; border-radius: 5px; }
+        .code-container { background: #222; color: #0f0; padding: 10px; border-radius: 5px; }
+    </style>
+</head>
+<body>
+
+    <!-- Navbar -->
+    <div id="navbar-container"></div>
+
+    <div class="container">
+        <h1 class="text-center">🌎 Scene in Bill-E Simulation</h1>
+        <p class="text-center text-muted">How the Three.js scene is set up and structured.</p>
+
+        <!-- 🎯 Theoretical Explanation -->
+        <div class="section">
+            <h2>📖 Theoretical Background</h2>
+            <p>
+                In <strong> Three.js</strong> the scene serves as the 3D world where objects are placed. It includes:
+            </p>
+            <ul>
+                <li>💡 <strong>Lighting:</strong>  – Used to control how objects appear.</li>
+                <li>🎨 <strong>Background & Color</strong> – Defines the scene's ambiance.</li>
+                <li>🛠 <strong>Grid & Helpers</strong> – Provides a reference system for navigation.</li>
+                <li>🎥 <strong>Camera & Controls</strong> – Allows rotating, zooming, and panning within the scene.</li>
+            </ul>
+        </div>
+
+        <!-- ⚙️ Usable Functions -->
+        <div class="section">
+            <h2>⚙️ Usable Function</h2>
+            <p>One core function is used to set up the scene:</p>
+
+            <h4><code>initScene()</code></h4>
+            <p><strong>📥 Inputs:</strong> None</p>
+            <p><strong>📤 Output:</strong> A fully initialized Three.js scene.</p>
+            <pre class="code-container">
+function initScene() {
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x87ceeb); // Light blue sky color
+    
+    const gridHelper = new THREE.GridHelper(20, 20);
+    scene.add(gridHelper);
+    
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+    scene.add(ambientLight);
+    
+    return scene;
+}
+            </pre>
+        </div>
+
+        <!-- 🎯 Example Usage -->
+        <div class="section">
+            <h2>🎯 Example Usage</h2>
+            <p>Initialize the scene and add elements:</p>
+            <pre class="code-container">
+import * as THREE from "three";
+import { initScene } from "./scene.js";
+
+const scene = initScene();
+const geometry = new THREE.BoxGeometry();
+const material = new THREE.MeshStandardMaterial({ color: 0xff0000 });
+const cube = new THREE.Mesh(geometry, material);
+
+scene.add(cube); // ✅ Adding objects to the scene
+            </pre>
+        </div>
+
+        <h3 class="text-center text-success">🎉 Now you understand how the scene is initialized!</h3>
+    </div>
+
+</body>
+</html>

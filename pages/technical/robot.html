@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bill-E Robot | Robot</title>
+    <link rel="stylesheet" href="../../styles.css">
+    <script src="../../script.js" defer></script> <!-- Load the navbar dynamically -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js" defer></script>
+    <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; margin: 40px; background-color: #f4f4f4; color: #333; }
+        h1, h2 { color: #222; }
+        pre { background: #222; color: #0f0; padding: 10px; border-radius: 5px; white-space: pre-wrap; }
+        code { background: #eee; padding: 3px 6px; border-radius: 3px; }
+        .container { max-width: 900px; margin: auto; padding: 20px; background: white; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+        .section { margin-bottom: 30px; padding: 20px; background: #f9f9f9; border-left: 5px solid #71bada; border-radius: 5px; }
+        .code-container { background: #222; color: #0f0; padding: 10px; border-radius: 5px; }
+    </style>
+</head>
+<body>
+    <!-- Navbar -->
+    <div id="navbar-container"></div>
+
+    <div class="container">
+        <h1 class="text-center">🤖 Bill-E Robot Structure</h1>
+        <p class="text-center text-muted">How the robot is modeled, initialized, and structured in the simulation.</p>
+
+        <!-- 🎯 Theoretical Explanation -->
+        <div class="section">
+            <h2>📖 Understanding the Robot Model</h2>
+            <p>
+                The Bill-E robot is modeled using <strong>a series of joints and links</strong> connected to form a bipedal structure.
+                Each joint has a <strong>set angle</strong> that defines its movement, while each link represents a <strong>rigid segment</strong> between joints.
+            </p>    
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <br>
+                    <p>
+                        Bill-E is a <strong>5 DOF (Degrees of Freedom) robotic leg</strong> system with five joints:
+                    </p>
+                    <ul class="mt-2">
+                        <li><strong>Joints 0 & 4:</strong> Rotate around the <strong>normal axis</strong> to the surface.</li>
+                        <li><strong>Joints 1, 2, & 3:</strong> Rotate around a <strong>local perpendicular axis</strong>, depending on the robot’s orientation.</li>
+                    </ul>
+                    <p>
+                        Each joint has a <strong>rotation range from -135° to 135°</strong>, giving a <strong>total movement range of 270°</strong>.
+                        This range ensures the <strong>cable-driven actuation</strong> remains functional without excessive strain.
+                    </p>
+                </div>
+                <!-- Image + Description -->
+                <div class="col-md-4 text-center">
+                    <img src="/images/angles.png" class="img-fluid" alt="Robot Joint Angles">
+                </div>
+            </div>
+            <br>
+
+            <p>
+                <strong>Joint angles are defined relative to the previous joint</strong>, meaning that each movement is calculated based on the current robot position.
+                The diagram above illustrates how each joint contributes to the robot’s flexibility.
+            </p>
+        </div>
+
+        <!-- ⚙️ Usable Class -->
+        <div class="section">
+            <h2>⚙️ Robot Class</h2>
+            <p>The robot is implemented as a <strong>class</strong>, allowing easy instantiation and modification.</p>
+
+            <h4><code>class THREERobot</code></h4>
+            <p><strong>📥 Inputs:</strong></p>
+            <ul>
+                <li><code>origin</code>: Initial position of the fixed leg.</li>
+                <li><code>target</code>: Initial position of the moving leg.</li>
+                <li><code>normal</code>: Orientation of the surface the robot stands on.</li>
+                <li><code>scene</code>: The Three.js scene where the robot is added.</li>
+                <li><code>initialGeometry</code> (optional): Default shape and size of the robot’s limbs.</li>
+                <li><code>limits</code> (optional): Joint constraints to limit rotation.</li>
+            </ul>
+
+            <p><strong>📤 Output:</strong></p>
+            <ul>
+                <li>A fully initialized robot with correct joint angles.</li>
+            </ul>
+
+            <pre class="code-container">
+class THREERobot {
+    constructor(origin, target, normal, scene, initialGeometry = DEFAULT_GEO, limits = DEFAULT_LIMITS) {
+        this.angles = [0, 0, 0, 0, 0]; // Angles of each joint
+        this.joints = [];               // Stores each joint object
+        this.robotBones = [];           // Three.js objects for rendering
+        this.fixed_leg = 0;             // Indicates which leg is fixed (0 or 4)
+        
+        .
+        . 
+        .
+
+        this.origin = { 
+            position: origin.clone(), 
+            normal: normal.clone().normalize() 
+        };
+
+        this.target = { 
+            position: target.clone(), 
+            normal: normal.clone().normalize() 
+        };
+
+        this.direction = new THREE.Vector3().subVectors(this.target.position, this.origin.position);
+
+        this.updateAnglesFromTarget();  // Applies inverse kinematics to reach target pos
+    }
+}
+            </pre>
+        </div>
+
+        <!-- 🚀 Key Features -->
+        <div class="section">
+            <h2>🚀 Key Features</h2>
+            <ul>
+                <li>📐 <strong>constructor():</strong> Initializes the robot with position and orientation.</li>
+                <li>🦿 <strong>updateAnglesFromTarget():</strong> Applies input angles using inverse kinematics (<a href="inverseKinematics.html">see IK page</a>).</li>
+                <li>🔄 <strong>swapFixedLeg():</strong> Switches the supporting leg.</li>
+            </ul>
+        </div>
+
+        <!-- 🎯 Example Usage -->
+        <div class="section">
+            <h2>🎯 Example Usage</h2>
+            <p>Initialize a new robot in the scene:</p>
+            <pre class="code-container">
+import { THREERobot } from "./robot.js";
+
+const leftLegPos = new THREE.Vector3(0, 0, 0);
+const rightLegPos = new THREE.Vector3(1, 0, 0);
+const normal = new THREE.Vector3(0, 0, 1);
+const scene = new THREE.Scene();
+
+const myRobot = new THREERobot(leftLegPos, rightLegPos, normal, scene);
+scene.add(myRobot);
+            </pre>
+        </div>
+
+    
+
+    <!-- 🎯 Example Usage -->
+    <div class="section">
+        <h2>🎯 Demos</h2>
+        <p>Click below to interact with the Bill-E Robot in different demos:</p>
+
+        <div class="row align-items-center text-center">
+            <!-- Demo 1 -->
+            <div class="col-md-6 mb-3">
+                <a href="/Demo Code/demo/1_demo_Joint.html" target="_blank">
+                    <img src="/images/robot_demo_1.png" class="img-fluid border rounded shadow-sm" alt="Interactive Robot Joint Demo">
+                </a>
+                <p class="mt-2"><strong>Demo 1:</strong> Joint Manipulation</p>
+            </div>
+
+            <!-- Demo 2 -->
+            <div class="col-md-6 mb-3">
+                <a href="/Demo Code/demo/2_demo_IK.html" target="_blank">
+                    <img src="/images/robot_demo_2.png" class="img-fluid border rounded shadow-sm" alt="Inverse Kinematics Demo">
+                </a>
+                <p class="mt-2"><strong>Demo 2:</strong> Inverse Kinematics Simulation</p>
+            </div>
+        </div>
+    </div>
+
+    <h3 class="text-center text-success">🎉 Now you understand how the robot is structured and initialized!</h3>
+
+</div>
+</body>
+</html>

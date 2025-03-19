@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bill-E Robot | Voxels</title>
+    <link rel="stylesheet" href="../../styles.css">
+    <script src="../../script.js" defer></script> <!-- Load the navbar dynamically -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js" defer></script>
+    <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; margin: 40px; background-color: #f4f4f4; color: #333; }
+        h1, h2 { color: #222; }
+        pre { background: #222; color: #0f0; padding: 10px; border-radius: 5px; white-space: pre-wrap; }
+        code { background: #eee; padding: 3px 6px; border-radius: 3px; }
+        .container { max-width: 900px; margin: auto; padding: 20px; background: white; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+        .section { margin-bottom: 30px; padding: 20px; background: #f9f9f9; border-left: 5px solid #71bada; border-radius: 5px; }
+        .code-container { background: #222; color: #0f0; padding: 10px; border-radius: 5px; }
+    </style>
+</head>
+<body>
+
+    <!-- Navbar -->
+    <div id="navbar-container"></div>
+
+    <div class="container">
+        <h1 class="text-center">🔲 Voxels in Bill-E Simulation</h1>
+        <p class="text-center text-muted">
+            How voxels are used to build the 3D environment for the robot.
+        </p>
+
+        <!-- 🎯 Theoretical Explanation -->
+        <div class="section">
+            <h2>📖 What Are Voxels?</h2>
+            <p>
+                A <strong>voxel</strong> (short for "volumetric pixel") represents a **small cubic unit** that makes up the 3D environment. 
+                Similar to **pixels in 2D images**, voxels define a **grid-based world** where objects can be placed, modified, or removed.
+            </p>
+            <h3>✔ How Voxels Work in Bill-E:</h3>
+            <ul>
+                <li>🔲 The world is made up of a **grid of voxels**, defining the terrain.</li>
+                <li>🧱 Each voxel represents a **solid block** that the robot can walk on.</li>
+                <li>📏 Voxels have a **fixed size and position**, ensuring precise navigation.</li>
+                <li>📂 Each voxel is **loaded from an STL file** and placed into the scene.</li>
+            </ul>
+        </div>
+
+        <!-- 🚀 Key Features -->
+        <div class="section">
+            <h2>🚀 Key Features</h2>
+            <ul>
+                <li>✅ <strong>3D Voxel Representation:</strong> Uses STL models to visualize blocks.</li>
+                <li>✅ <strong>Collision Detection:</strong> The global <code>voxelMap</code> tracks existing blocks.</li>
+                <li>✅ <strong>Dynamic Loading:</strong> Voxels can be **added** to or **removed** from the scene.</li>
+            </ul>
+        </div>
+
+        <!-- ⚙️ Usable Class -->
+        <div class="section">
+            <h2>⚙️ The `Voxel` Class</h2>
+            <p>The <code>Voxel</code> class handles the creation and management of individual voxels.</p>
+
+            <h4><code>class Voxel</code></h4>
+            <p><strong>📥 Inputs:</strong></p>
+            <ul>
+                <li><code>x, y, z</code>: The voxel’s position in the world.</li>
+                <li><code>scene</code>: The Three.js scene where the voxel is added.</li>
+                <li><code>path</code> (optional): The STL file path for voxel geometry.</li>
+            </ul>
+
+            <p><strong>📤 Output:</strong></p>
+            <ul>
+                <li>A <strong>3D voxel block</strong> placed into the scene.</li>
+            </ul>
+
+            <pre class="code-container">
+import * as THREE from "three";
+import { STLLoader } from "three/examples/jsm/loaders/STLLoader.js";
+
+export class Voxel {
+    constructor(x, y, z, scene, path = "../voxel.stl") {
+        this.scene = scene;
+        this.position = new THREE.Vector3(x, y, z);
+        this.loader = new STLLoader();
+        if (!window.voxelMap) window.voxelMap = new Set();
+        this.loadVoxel();
+    }
+
+    loadVoxel() {
+        this.loader.load(this.path, 
+            (geometry) => this.onVoxelLoaded(geometry), 
+            undefined, 
+            (error) => console.error("Error loading voxel:", error)
+        );
+    }
+
+    onVoxelLoaded(geometry) {
+        let material = new THREE.MeshStandardMaterial({ color: 0xffffff, metalness: 0.8, roughness: 0.6 });
+        let voxelMesh = new THREE.Mesh(geometry, material);
+
+        voxelMesh.scale.set(1, 1, 1);
+        voxelMesh.position.copy(this.position);
+
+        this.scene.add(voxelMesh);
+        window.voxelMap.add(new THREE.Vector3(this.position.x, this.position.y, this.position.z));
+    }
+}
+            </pre>
+        </div>
+
+        <!-- 🎯 Example Usage -->
+        <div class="section">
+            <h2>🎯 Example Usage</h2>
+            <p>Here’s how to add a voxel into the scene:</p>
+            <pre class="code-container">
+import { Voxel } from "./voxel.js";
+
+// ✅ Create a new Three.js scene
+const scene = new THREE.Scene();
+
+// ✅ Add a voxel at position (2, 1, 0)
+const newVoxel = new Voxel(2, 1, 0, scene);
+            </pre>
+
+            <p>After running this code, a voxel will be placed in the 3D environment at <code>(2,1,0)</code>.</p>
+        </div>
+
+        <div class="section">
+            <h2>🎯 Demos</h2>
+            <p>Click below to interact with the Bill-E Robot in different demos:</p>
+
+            <div class="row align-items-center text-center">
+                <!-- Demo 1 -->
+                <div class="col-md-6 mb-3">
+                    <a href="/Demo Code/demo/3_demo_voxel.html" target="_blank">
+                        <img src="/images/robot_demo_3.png" class="img-fluid border rounded shadow-sm" alt="Interactive Robot Joint Demo">
+                    </a>
+                    <p class="mt-2"><strong>Demo 1:</strong> Simple Voxel placer</p>
+                </div>
+
+                <!-- Demo 2 -->
+                <div class="col-md-6 mb-3">
+                    <a href="/Demo Code/demo/3_demo_voxel.html" target="_blank">
+                        <img src="/images/robot_demo_3.png" class="img-fluid border rounded shadow-sm" alt="Interactive Robot Joint Demo">
+                    </a>
+                    <p class="mt-2"><strong>Demo 2:</strong> More complex software for building structure</p>
+                </div>
+            </div>
+        </div>
+
+        <h3 class="text-center text-success">🎉 Now you understand how voxels work in Bill-E!</h3>
+    </div>
+
+</body>
+</html>

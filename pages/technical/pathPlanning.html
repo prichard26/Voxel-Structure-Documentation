@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bill-E Robot | Path planning</title>
+    <link rel="stylesheet" href="../../styles.css">
+    <script src="../../script.js" defer></script> <!-- Load the navbar dynamically -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js" defer></script>
+    <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; margin: 40px; background-color: #f4f4f4; color: #333; }
+        h1, h2 { color: #222; }
+        pre { background: #222; color: #0f0; padding: 10px; border-radius: 5px; white-space: pre-wrap; }
+        code { background: #eee; padding: 3px 6px; border-radius: 3px; }
+        .container { max-width: 900px; margin: auto; padding: 20px; background: white; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+        .section { margin-bottom: 30px; padding: 20px; background: #f9f9f9; border-left: 5px solid #71bada; border-radius: 5px; }
+        .code-container { background: #222; color: #0f0; padding: 10px; border-radius: 5px; }
+    </style>
+</head>
+<body>
+
+    <!-- Navbar -->
+    <div id="navbar-container"></div>
+
+    <div class="container">
+        <h1 class="text-center">🗺️ Path Planning</h1>
+        <p class="text-center text-muted">
+            How Bill-E navigates through voxel environments using A* search.
+        </p>
+
+        <!-- 🎯 Theoretical Explanation -->
+        <div class="section">
+            <h2>📖 Understanding Path Planning</h2>
+            <p>
+                The Bill-E robot navigates a **voxel-based environment** using an adapted **A* search algorithm**. The goal is to 
+                compute an optimal sequence of movements to reach a target while avoiding obstacles.
+            </p>
+
+            <h3>✔ How Path Planning Works:</h3>
+            <ul>
+                <li>🗺️ The environment is represented as a **3D grid of voxels**.</li>
+                <li>🚀 A* search explores possible moves and selects the **most efficient path**.</li>
+                <li>✅ The robot can **walk, turn, climb, and swap legs** to navigate different terrains.</li>
+                <li>⚠️ The algorithm must **handle deadlocks and prevent getting stuck**.</li>
+            </ul>
+        </div>
+
+        <!-- 🚀 Key Features -->
+        <div class="section">
+            <h2>🚀 Key Features</h2>
+            <ul>
+                <li>✅ <strong>A* Search Algorithm:</strong> Finds the shortest path while considering movement constraints.</li>
+                <li>✅ <strong>Dynamic Obstacle Avoidance:</strong> Ensures no movement passes through solid voxels.</li>
+                <li>✅ <strong>Multi-Terrain Navigation:</strong> Includes actions for climbing, turning, and swapping legs.</li>
+                <li>✅ <strong>Prevents Deadlocks:</strong> Avoids getting stuck by adjusting heuristics.</li>
+            </ul>
+        </div>
+
+        <!-- ⚙️ Usable Function -->
+        <div class="section">
+            <h2>⚙️ The `planPathToCoordinate()` Function</h2>
+            <p>
+                The function <code>planPathToCoordinate()</code> computes an **optimal movement path** from the robot's current position to a target voxel.
+            </p>
+
+            <h4><code>planPathToCoordinate(goalLegPosition, goalNormal)</code></h4>
+            <p><strong>📥 Inputs:</strong></p>
+            <ul>
+                <li><code>goalLegPosition</code>: The target voxel where the robot should move.</li>
+                <li><code>goalNormal</code>: The normal vector at the target, ensuring the robot is correctly oriented.</li>
+            </ul>
+
+            <p><strong>📤 Output:</strong></p>
+            <ul>
+                <li>A computed **sequence of movements** for the robot to follow.</li>
+            </ul>
+
+            <pre class="code-container">
+async function planPathToCoordinate(goalLegPosition, goalNormal) {
+    const STEP_SIZE = 1.0;
+    const MAX_ITERATIONS = 50000;
+    
+    if (!voxelExists(goalLegPosition, goalNormal)) {
+        console.warn("❌ Target voxel doesn't exist:", goalLegPosition);
+        return { success: false, path: [] };
+    }
+
+    let openSet = [{ position: this.target.position.clone(), normal: this.target.normal.clone(), path: [] }];
+    let visited = new Set();
+
+    while (openSet.length > 0) {
+        openSet.sort((a, b) => heuristic(a.position) - heuristic(b.position));
+        let current = openSet.shift();
+        if (!current) continue;
+
+        let currentKey = serialize(current.position, current.normal);
+        if (visited.has(currentKey)) continue;
+        visited.add(currentKey);
+
+        if (current.position.distanceTo(goalLegPosition) < 0.01 && current.normal.angleTo(goalNormal) < 0.1) {
+            return { success: true, path: current.path };
+        }
+
+        for (let move of possibleActions) {
+            if (move.condition && !move.condition()) continue;
+            let neighborPos = current.position.clone().add(move.moveVec);
+            if (!voxelExists(neighborPos, move.newNorm)) continue;
+            let newPath = [...current.path, { position: neighborPos, action: move.action }];
+            openSet.push({ position: neighborPos, normal: move.newNorm, path: newPath });
+        }
+    }
+
+    console.warn("❌ No valid path found.");
+    return { success: false, path: [] };
+}
+            </pre>
+        </div>
+
+        <!-- 🎯 Example Usage -->
+        <div class="section">
+            <h2>🎯 Example Usage</h2>
+            <p>Compute a path and execute the robot’s movements:</p>
+            <pre class="code-container">
+import { planPathToCoordinate } from "./path_planner.js";
+
+const goalPos = new THREE.Vector3(5, 2, 0);
+const goalNormal = new THREE.Vector3(0, 0, 1);
+
+const { success, path } = await planPathToCoordinate(goalPos, goalNormal);
+
+if (success) {
+    path.forEach(step => {
+        robot.executeMovement(step.action);
+    });
+}
+            </pre>
+
+            <p>If a valid path is found, the robot will follow the computed movement sequence.</p>
+        </div>
+
+        <div class="section">
+            <h2>🎯 Demos</h2>
+            <p>Click below to interact with the Bill-E Robot in different demos:</p>
+
+            <div class="row align-items-center text-center">
+                <!-- Demo 1 -->
+                <div class="col-md-6 mb-3">
+                    <a href="/Demo Code/demo/5_demo_path_planning_one_plane.html" target="_blank">
+                        <img src="/images/robot_demo_5.png" class="img-fluid border rounded shadow-sm" alt="Interactive Robot Joint Demo">
+                    </a>
+                    <p class="mt-2"><strong>Demo 1:</strong> Path planning 1</p>
+                </div>
+
+                <!-- Demo 2 -->
+                <div class="col-md-6 mb-3">
+                    <a href="/Demo Code/demo/6_demo_path_planning_full.html" target="_blank">
+                        <img src="/images/robot_demo_6.png" class="img-fluid border rounded shadow-sm" alt="Inverse Kinematics Demo">
+                    </a>
+                    <p class="mt-2"><strong>Demo 2:</strong> Path planning 2</p>
+                </div>
+            </div>
+        </div>
+
+        <h3 class="text-center text-success">🎉 Now you understand how Bill-E navigates its environment using A* search!</h3>
+    </div>
+
+</body>
+</html>

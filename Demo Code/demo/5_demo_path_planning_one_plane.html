@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Demo 5: Path Planning</title>
+    <title>Demo 5: Path Planning 1</title>
     <style>
         html, body {
             margin: 0;
@@ -27,7 +27,7 @@
         background: rgba(0, 0, 0, 0.5);
         padding: 5px 10px;
         border-radius: 5px;">
-        Demo 5: Path Planning
+        Demo 5: Path Planning 1
     </div>
  
     <script type="module">
@@ -121,9 +121,9 @@
 
 
         // Initialize the robot
-        const originPos = new THREE.Vector3(-4.5,0,2);
-        const targetPos = new THREE.Vector3(-4.5, 0,3);
-        const normal = new THREE.Vector3(1, 0, 0);
+        const originPos = new THREE.Vector3(0,0,0.5);
+        const targetPos = new THREE.Vector3(1,0,0.5);
+        const normal = new THREE.Vector3(0, 0, 1);
 
         const robot = new THREERobot(
             originPos, targetPos, normal, scene

@@ -4,18 +4,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Step-by-Step Construction | Recursive Robotic Swarms</title>
-    <link rel="stylesheet" href="styles.css">
+    <title>Bill-E Robot | Step-by-Step Construction</title>
+    <link rel="stylesheet" href="../../styles.css">
+    <script src="../../script.js" defer></script> <!-- Load the navbar dynamically -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js" defer></script>
 </head>
 
 <body>
-
-    <nav class="navbar navbar-expand-lg navbar-light bg-light">
-        <div class="container">
-            <a class="navbar-brand" href="../index.html">Recursive Robotic Swarms</a>
-        </div>
-    </nav>
+    <!-- Placeholder for navbar -->
+    <div id="navbar-container"></div>
 
     <section class="container mt-5">
         <h2>Simulation Structure</h2>
@@ -188,7 +186,7 @@
                     <p>Click on the image to open the <strong>Interactive Robot Joint Demo</strong> in a new tab.</p>
 
                     <p class="mt-3">
-                        <strong>>>> <a href="/pages/tecnical/main_technical.html" class="text-decoration-none">See the Technical Implementation</a> <<<</strong>
+                        <strong>>>> <a href="/pages/technical/main_technical.html" class="text-decoration-none">See the Technical Implementation</a> <<<</strong>
                     </p>
 
                 </div>
@@ -200,7 +198,7 @@
             <p>
                 The goal of the <strong> Inverse Kinematics (IK)</strong> is to determines the required joint angles to reach a target position.</li>
                 To avoid heavy computation, a simpler 2 step Inverse kinematic was implemented. 
-                <strong>>>> <a href="/pages/tecnical/main_technical.html" class="text-decoration-none">See the Technical Implementation</a> <<<</strong>
+                <strong>>>> <a href="/pages/technical/main_technical.html" class="text-decoration-none">See the Technical Implementation</a> <<<</strong>
             </p>
             <div class="row align-items-center">
                 <div class="col-md-6">
@@ -254,7 +252,7 @@
 <div class="row align-items-center">
     <div class="col-md-6">
         <a href="/Demo Code/demo/3_demo_voxel.html" target="_blank">
-            <img src="/images/robot_demo_2.png" class="img-fluid border rounded" alt="Interactive Voxel Demo">
+            <img src="/images/robot_demo_3.png" class="img-fluid border rounded" alt="Interactive Voxel Demo">
         </a>
     </div>
     <div class="col-md-6">
@@ -292,9 +290,54 @@
     </div>
     <div class="col-md-6">
         <a href="/Demo Code/demo/4_demo_mvt.html" target="_blank">
-            <img src="/images/robot_demo_2.png" class="img-fluid border rounded" alt="Interactive Robot Movement Demo">
+            <img src="/images/robot_demo_4.png" class="img-fluid border rounded" alt="Interactive Robot Movement Demo">
         </a>
     </div>
+</div>            
+
+<!-- ============================================================ PATH PLANNING  ============================================================ -->
+
+<br>
+<h4>Path Planning</h4>
+<hr>
+<p>
+    The goal of this section is to be able to give a target position and target orientation and for the robot to find the shortest path. 
+    In order to acheive this, I have implemented an A* algorithm.
+</p>
+
+<p>
+    <strong> <a href="/pages/technical/main_technical.html" class="text-decoration-none">Click-here </a></strong> 
+    to understand its implementation and see the pseudo-code! 
+</p>
+
+<div class="row align-items-center">
+    <div class="col-md-5">
+        <a href="/Demo Code/demo/5_demo_path_planning_one_plane.html" target="_blank">
+            <img src="/images/robot_demo_5.png" class="img-fluid border rounded" alt="Interactive Robot Movement Demo">
+        </a>
+        <a href="/Demo Code/demo/6_demo_path_planning_full.html" target="_blank">
+            <img src="/images/robot_demo_6.png" class="img-fluid border rounded" alt="Interactive Robot Movement Demo">
+        </a>
+    </div>
+    <div class="col-md-7">
+        <p><strong>🔹 Try It Yourself!</strong></p>
+
+        <p>
+            For this part, I made 2 demos. Before trying them, it is important to note that only valid goal position will be accepted. 
+            If the goal is not valid the robot will not move. Thus try to change your goal or reload the page.
+        </p>    
+        <p>
+            Both map need around 2 seconds to load so don't worry if you get a white screen.
+        </p>    
+        <p>
+            In the first one you can choose any coordinate in the map and the robot will find the shortest path to get there.
+        </p>    
+        <p>
+            In the second demo a map is randomly generated and you can choose any XYZ coordinates plus the orientation of the robot. 
+        </p>
+        <p>Click on the image to launch the <strong>InteractivePath Planning Demos</strong> in a new tab.</p>
+    </div>
+
 </div>            
         </section>
 

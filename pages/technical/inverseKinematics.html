@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bill-E Robot | Movement</title>
+    <link rel="stylesheet" href="../../styles.css">
+    <script src="../../script.js" defer></script> <!-- Load the navbar dynamically -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js" defer></script>
+    <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; margin: 40px; background-color: #f4f4f4; color: #333; }
+        h1, h2 { color: #222; }
+        pre { background: #222; color: #0f0; padding: 10px; border-radius: 5px; white-space: pre-wrap; }
+        code { background: #eee; padding: 3px 6px; border-radius: 3px; }
+        .container { max-width: 900px; margin: auto; padding: 20px; background: white; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+        .section { margin-bottom: 30px; padding: 20px; background: #f9f9f9; border-left: 5px solid #71bada; border-radius: 5px; }
+        .code-container { background: #222; color: #0f0; padding: 10px; border-radius: 5px; }
+    </style>
+</head>
+
+<body>
+    <!-- Navbar -->
+    <div id="navbar-container"></div>
+
+    <div class="container">
+        <h1 class="text-center">📐 Inverse Kinematics (IK)</h1>
+        <p class="text-center text-muted">
+            How the robot computes the joint angles needed to reach a target position.
+        </p>
+
+        <!-- 🎯 Theoretical Explanation -->
+        <div class="section">
+            <h2>📖 Understanding Inverse Kinematics</h2>
+            <p>
+                Inverse kinematics (IK) is used to compute the <strong>joint angles</strong> required to move the <strong>robot's foot</strong> to a specific target.
+                Since <strong>Bill-E</strong> is a <strong>5-DOF bipedal system</strong> but can be represented as a 4 DOF arm, solving IK is done in <strong>two main steps</strong>:
+            </p>
+            <ul>
+                <li>✔ <strong>Step 1: Compute Joint 0 (\(\theta_0\)) - Yaw Rotation</strong> (rotation around the Z-axis).</li>
+                <li>✔ <strong>Step 2: Compute Joints 1, 2, 3 (\(\theta_1, \theta_2, \theta_3\))</strong> - Positioning the moving leg.</li>
+            </ul>
+            <img src="/images/IK.jpeg" class="img-fluid border rounded" alt="Robot Inverse Kinematic">
+
+        </div>
+        <style>
+            .equation-container {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+            }
+        
+            .equation-container p {
+                flex: 1;
+            }
+        
+            .step-number {
+                font-size: 20px;
+                color: #000000;
+                text-align: right;
+            }
+        </style>
+        
+        <!-- 🔢 Step 1: Computing Joint 0 (Yaw Rotation) -->
+        <div class="section">
+            <h2>Step 1: Computing Joint 0 (Yaw Rotation)</h2>
+            <p>
+                The first step is computing <strong>\(\theta_0\)</strong>, which aligns the leg <strong>toward the target</strong> in the plane of the 2 legs.
+            </p>
+            <h4>📌 How It Works:</h4>
+            <ul>
+                <li>Project the <strong>target position</strong> onto the leg's plane.</li>
+                <li>Compute the angle <strong>between the robot’s current direction and the projected target</strong>.</li>
+            </ul>
+        
+            <!-- Equation with Step Number on the Right -->
+            <div class="equation-container">
+                <p class="mathjax">
+                    \[
+                    \theta_0 = \text{atan2} \left( (\mathbf{direction} \times \mathbf{target}_{\text{proj}}) \cdot \mathbf{normal}, \mathbf{direction} \cdot \mathbf{target}_{\text{proj}} \right)
+                    \]
+                </p>
+                <div class="step-number">(1)</div>
+            </div>
+        </div>
+        
+        <!-- 🔢 Step 2: Solving 3-DOF IK -->
+        <div class="section">
+            <h2>Step 2: Solving 3-DOF Inverse Kinematics</h2>
+            <p>
+                Once <strong>\(\theta_0\)</strong> is known, we solve for <strong>\(\theta_1, \theta_2, \theta_3\)</strong>, which define the <strong>bending of the leg</strong>. 
+                As we want the leg to reach a position with a specific orientation we always have a constraint on theta3. 
+            </p>
+            <h4>📌 How It Works:</h4>
+            <ul>
+                <li>Compute the <strong>distance</strong> \( d \) from the base to the target.</li>
+                <li>Use <strong>trigonometry</strong> and the <strong>law of cosines</strong> to compute joint angles.</li>
+            </ul>
+        
+            <!-- Equation with Step Number on the Right -->
+            <div class="equation-container">
+                <p class="mathjax">
+                    \[
+                    \cos(\theta_2) = \frac{x^2 + y^2 - L_1^2 - L_2^2}{2 L_1 L_2}
+                    \]
+                </p>
+                <div class="step-number">(2)</div>
+            </div>
+        
+            <div class="equation-container">
+                <p class="mathjax">
+                    \[
+                    \theta_1 = \tan^{-1} \left( \frac{y}{x} \right) - \tan^{-1} \left( \frac{L_2 \sin(\theta_2)}{L_1 + L_2 \cos(\theta_2)} \right)
+                    \]
+                </p>
+                <div class="step-number">(3)</div>
+            </div>
+        
+            <div class="equation-container">
+                <p class="mathjax">
+                    \[
+                    \theta_3 = \psi - (\theta_1 + \theta_2)
+                    \]
+                </p>
+                <div class="step-number">(4)</div>
+            </div>
+        </div>
+        <!-- ⚙️ Usable Function -->
+
+        <div class="section">
+            <h2>⚙️ Method: updateAnglesFromTarget()</h2>
+            <p>
+                This method in the <code>THREERobot</code> class computes the necessary angles so that the robot correctly positions 
+                one leg at <strong>origin</strong> and the other at <strong>target</strong>.
+            </p>
+            <p>
+                To use this method properly, you must first set your <strong>target position and orientation</strong>. Once defined, 
+                calling <code>updateAnglesFromTarget()</code> will automatically update the robot’s joint angles to match the desired configuration.
+            </p>
+            <p>
+                The function follows these key steps:
+                <ul>
+                    <li>✔️ <strong>Compute the direction</strong> between the <code>origin</code> (fixed leg) and <code>target</code> (moving leg).</li>
+                    <li>✔️ <strong>Project the target</strong> onto the plane of the fixed leg to determine rotation.</li>
+                    <li>✔️ <strong>Solve Inverse Kinematics (IK)</strong> for the 3-joint leg mechanism.</li>
+                    <li>✔️ <strong>Apply the computed angles</strong> to the robot’s joints.</li>
+                </ul>
+            </p>
+        </div>
+            <div class="section">
+            <h2>🎯 Example Usage: Updating Robot Angles</h2>
+            <p>
+                Below is an example of how to initialize the robot, set a new target position, 
+                and update the angles using <code>updateAnglesFromTarget()</code>.
+            </p>
+        
+            <pre class="code-container">
+            // Import the robot class
+            import { THREERobot } from "./robot.js";
+        
+            // Initialize the robot with starting positions
+            const originPosition = new THREE.Vector3(0, 0, 0);
+            const targetPosition = new THREE.Vector3(2, 0, 1);
+            const normalVector = new THREE.Vector3(0, 0, 1);  // Normal pointing up
+        
+            const myRobot = new THREERobot(originPosition, targetPosition, normalVector);
+        
+            // Add the robot to the Three.js scene
+            scene.add(myRobot);
+        
+            // Set a new target position & normal for the moving leg
+            myRobot.target.position.set(3, 1, 2);
+            myRobot.target.normal.set(0, 0, 1);  // Keeping same normal
+        
+            // Update the robot's angles based on the new target
+            myRobot.updateAnglesFromTarget();
+            </pre>
+        
+            <p>After running this code, the robot will automatically update its joint angles to reach the new target position.</p>
+        </div>
+
+        <!-- 🔄 Swapping Legs -->
+        <div class="section">
+            <h2>🔄 Swapping Legs for Movement</h2>
+            <p>
+                While inverse kinematics allows the robot to adjust its position, <strong>it must swap its fixed leg</strong> to move in space.
+                This is achieved through a <strong>leg swap</strong>, where the <strong>target leg becomes the new fixed leg</strong>, and the robot is <strong>rebuilt from this new base</strong>.
+            </p>
+
+            <h4>📌 How It Works:</h4>
+            <ul>
+                <li>✅ <strong>Reconstruct the robot</strong> from the new fixed leg (<strong>previous target</strong>).</li>
+                <li>✅ <strong>Set the new target</strong> as the <strong>old origin</strong>, allowing the cycle to continue.</li>
+                <li>✅ <strong>Recompute inverse kinematics</strong>, adjusting joint angles accordingly.</li>
+            </ul>
+
+            <p>
+                This simple operation enables <strong>continuous movement</strong>, allowing Bill-E to <strong>walk, climb, and reposition dynamically</strong>.
+            </p>
+
+            <pre class="code-container">
+function swapFixedLeg() {
+    let temp = this.origin;
+    this.origin = this.target;
+    this.target = temp;
+
+    this.direction = new THREE.Vector3().subVectors(this.target.position, this.origin.position);
+    this.updateAnglesFromTarget(); // Recompute IK for new configuration
+}
+            </pre>
+        </div>
+
+        <!-- 🎯 Example Usage -->
+        <div class="section">
+            <h2>🎯 Example Usage</h2>
+            <p>Move the robot by setting a target and swapping legs:</p>
+            <pre class="code-container">
+robot.target.position.set(2, 0, 1);  // Set new target position
+robot.target.normal.set(0, 0, 1);    // Set new target position
+robot.updateAnglesFromTarget();      // Compute IK angles
+            </pre>
+        </div>
+    <!-- 🎯 Example Usage -->
+    <div class="section">
+        <h2>🎯 Demos</h2>
+        <p>Click below to interact with the Bill-E Robot in different demos:</p>
+
+        <div class="row align-items-center text-center">
+            <!-- Demo 1 -->
+            <div class="col-md-6 mb-3">
+                <a href="/Demo Code/demo/1_demo_Joint.html" target="_blank">
+                    <img src="/images/robot_demo_1.png" class="img-fluid border rounded shadow-sm" alt="Interactive Robot Joint Demo">
+                </a>
+                <p class="mt-2"><strong>Demo 1:</strong> Joint Manipulation</p>
+            </div>
+
+            <!-- Demo 2 -->
+            <div class="col-md-6 mb-3">
+                <a href="/Demo Code/demo/2_demo_IK.html" target="_blank">
+                    <img src="/images/robot_demo_2.png" class="img-fluid border rounded shadow-sm" alt="Inverse Kinematics Demo">
+                </a>
+                <p class="mt-2"><strong>Demo 2:</strong> Inverse Kinematics Simulation</p>
+            </div>
+        </div>
+    </div>
+        <h3 class="text-center text-success">🎉 Now you understand how Inverse Kinematics & Leg Swapping work in Bill-E!</h3>
+    </div>
+
+    <!-- Include MathJax for equation rendering -->
+    <script type="text/javascript" async src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script type="text/javascript" async
+      src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/MathJax.js?config=TeX-MML-AM_CHTML">
+    </script>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
