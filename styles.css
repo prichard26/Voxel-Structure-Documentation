@@ -5,7 +5,13 @@ body {
     padding: 0;
     padding-top: 60px; /* Prevents content from hiding under navbar */
 }
-
+body {
+    font-family: Arial, sans-serif;
+    font-size: 14px; /* Decrease this from 16px (default) to 14px */
+    line-height: 1.5;
+    margin: 40px;
+    color: #333;
+}
 /* NAVBAR */
 .navbar {
     position: fixed;
